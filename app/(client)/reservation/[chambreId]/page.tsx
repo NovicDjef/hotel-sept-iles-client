@@ -39,7 +39,7 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
     nom: 'Suite Royale',
     categorie: 'Premium',
     prix: 299,
-    image: '/images/rooms/suite-royale-1.jpg'
+    image: '/images/rooms/suite-royale-1.svg'
   }
 
   const calculateNights = () => {

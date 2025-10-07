@@ -200,7 +200,7 @@ export default function HomePage() {
               className="relative aspect-square lg:aspect-auto lg:h-[500px] rounded-3xl overflow-hidden shadow-strong"
             >
               <Image
-                src="/images/location-map.jpg"
+                src="/images/location-map.svg"
                 alt="Localisation Hôtel Sept-Îles"
                 fill
                 className="object-cover"

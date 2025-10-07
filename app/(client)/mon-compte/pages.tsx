@@ -32,7 +32,7 @@ const user = {
   adresse: '123 rue Principale',
   ville: 'Québec',
   codePostal: 'G1A 1A1',
-  avatar: '/images/avatars/default.jpg',
+  avatar: '/images/avatars/default.svg',
   dateInscription: '2024-01-15'
 }
 
@@ -41,7 +41,7 @@ const reservations = [
     id: 1,
     chambre: {
       nom: 'Suite Royale',
-      image: '/images/rooms/suite-royale-1.jpg'
+      image: '/images/rooms/suite-royale-1.svg'
     },
     dateArrivee: '2025-02-15',
     dateDepart: '2025-02-18',
@@ -54,7 +54,7 @@ const reservations = [
     id: 2,
     chambre: {
       nom: 'Chambre Deluxe',
-      image: '/images/rooms/deluxe-1.jpg'
+      image: '/images/rooms/deluxe-1.svg'
     },
     dateArrivee: '2024-12-20',
     dateDepart: '2024-12-22',
@@ -67,7 +67,7 @@ const reservations = [
     id: 3,
     chambre: {
       nom: 'Suite Familiale',
-      image: '/images/rooms/family-1.jpg'
+      image: '/images/rooms/family-1.svg'
     },
     dateArrivee: '2024-11-10',
     dateDepart: '2024-11-13',
@@ -83,13 +83,13 @@ const favoris = [
     id: 1,
     nom: 'Suite Royale',
     prix: 299,
-    image: '/images/rooms/suite-royale-1.jpg'
+    image: '/images/rooms/suite-royale-1.svg'
   },
   {
     id: 3,
     nom: 'Suite Familiale',
     prix: 249,
-    image: '/images/rooms/family-1.jpg'
+    image: '/images/rooms/family-1.svg'
   }
 ]
 

@@ -19,6 +19,9 @@ export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const pathname = usePathname()
 
+  // Header avec fond sombre comme le Footer (toujours visible)
+  const isDarkHeader = true
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
@@ -45,11 +48,7 @@ export function Navigation() {
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled
-            ? 'bg-white/95 backdrop-blur-md shadow-md'
-            : 'bg-transparent'
-        }`}
+        className="fixed top-0 left-0 right-0 z-50 bg-gradient-luxury shadow-md"
       >
         <nav className="container-custom">
           <div className="flex h-16 lg:h-20 items-center justify-between">
@@ -61,21 +60,15 @@ export function Navigation() {
               <motion.div
                 whileHover={{ rotate: 180 }}
                 transition={{ duration: 0.3 }}
-                className={`flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-xl ${
-                  isScrolled ? 'bg-gradient-ocean' : 'bg-white'
-                } shadow-md`}
+                className="flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-xl bg-white shadow-md"
               >
-                <Sparkles className={`h-5 w-5 lg:h-6 lg:w-6 ${isScrolled ? 'text-white' : 'text-primary-600'}`} />
+                <Sparkles className="h-5 w-5 lg:h-6 lg:w-6 text-primary-600" />
               </motion.div>
               <div className="hidden sm:block">
-                <h1 className={`font-display text-xl lg:text-2xl font-bold ${
-                  isScrolled ? 'text-primary-900' : 'text-white'
-                }`}>
+                <h1 className="font-display text-xl lg:text-2xl font-bold text-white">
                   Sept-Îles
                 </h1>
-                <p className={`text-xs ${
-                  isScrolled ? 'text-neutral-600' : 'text-white/80'
-                }`}>
+                <p className="text-xs text-white/70">
                   Hôtel Premium
                 </p>
               </div>
@@ -89,21 +82,15 @@ export function Navigation() {
                   href={link.href}
                   className={`relative px-4 py-2 text-sm font-medium transition-colors ${
                     pathname === link.href
-                      ? isScrolled
-                        ? 'text-primary-600'
-                        : 'text-white'
-                      : isScrolled
-                      ? 'text-neutral-700 hover:text-primary-600'
-                      : 'text-white/80 hover:text-white'
+                      ? 'text-white'
+                      : 'text-white/70 hover:text-white'
                   }`}
                 >
                   {link.label}
                   {pathname === link.href && (
                     <motion.div
                       layoutId="navbar-indicator"
-                      className={`absolute bottom-0 left-0 right-0 h-0.5 ${
-                        isScrolled ? 'bg-primary-600' : 'bg-white'
-                      }`}
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     />
                   )}
@@ -115,18 +102,14 @@ export function Navigation() {
             <div className="hidden lg:flex items-center gap-3">
               <Link
                 href="/mon-compte"
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
-                  isScrolled
-                    ? 'text-neutral-700 hover:text-primary-600'
-                    : 'text-white/80 hover:text-white'
-                }`}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-colors"
               >
                 <User className="h-4 w-4" />
                 Mon compte
               </Link>
               <Link
                 href="/chambres"
-                className="btn-primary"
+                className="btn-gold"
               >
                 <Calendar className="h-4 w-4" />
                 Réserver
@@ -136,11 +119,7 @@ export function Navigation() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className={`lg:hidden p-2 rounded-xl transition-colors ${
-                isScrolled
-                  ? 'text-neutral-900 hover:bg-neutral-100'
-                  : 'text-white hover:bg-white/10'
-              }`}
+              className="lg:hidden p-2 rounded-xl text-white hover:bg-white/10 transition-colors"
               aria-label="Menu"
             >
               {isOpen ? (

@@ -39,12 +39,12 @@ export default function ChambreDetailPage({ params }: { params: { id: string } }
     capacite: 2,
     superficie: 45,
     images: [
-      '/images/rooms/suite-royale-1.jpg',
-      '/images/rooms/suite-royale-2.jpg',
-      '/images/rooms/suite-royale-3.jpg',
-      '/images/rooms/suite-royale-4.jpg',
-      '/images/rooms/suite-royale-5.jpg',
-      '/images/rooms/suite-royale-6.jpg',
+      '/images/rooms/suite-royale-1.svg',
+      '/images/rooms/suite-royale-2.svg',
+      '/images/rooms/suite-royale-3.svg',
+      '/images/rooms/suite-royale-4.svg',
+      '/images/rooms/suite-royale-5.svg',
+      '/images/rooms/suite-royale-6.svg',
     ],
     equipements: [
       { nom: 'Wi-Fi haut débit gratuit', disponible: true },
