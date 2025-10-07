@@ -10,19 +10,19 @@ export function HeroSection() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative h-[70vh] lg:h-[80vh] flex items-center justify-center overflow-hidden">
       {/* Background avec parallax effect */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/images/hero-hotel.jpg"
+          src="https://lenord-cotier.com/wp-content/uploads/sites/3/2019/03/02h24v10_Vente_HotelSeptIles-1320x877.jpg"
           alt="Hôtel Sept-Îles"
           fill
           priority
-          className="object-cover"
+          className="object-cover brightness-50"
           quality={90}
         />
         {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
       </div>
 

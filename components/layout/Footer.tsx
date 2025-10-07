@@ -1,13 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Facebook, 
-  Instagram, 
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Facebook,
+  Instagram,
   Sparkles,
   Clock,
   Award
@@ -51,8 +52,13 @@ export function Footer() {
           {/* Colonne 1 - À propos */}
           <div className="lg:col-span-4">
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-md">
-                <Sparkles className="h-6 w-6 text-primary-600" />
+              <div className="relative h-12 w-12 rounded-xl overflow-hidden shadow-md">
+                <Image
+                  src="/images/hotel/logoH.jpg"
+                  alt="Logo Hôtel Sept-Îles"
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div>
                 <h2 className="font-display text-2xl font-bold">Sept-Îles</h2>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, User, Calendar, Phone, Sparkles } from 'lucide-react'
@@ -58,11 +59,16 @@ export function Navigation() {
               className="flex items-center gap-3 group"
             >
               <motion.div
-                whileHover={{ rotate: 180 }}
+                whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.3 }}
-                className="flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-xl bg-white shadow-md"
+                className="relative h-12 w-12 lg:h-14 lg:w-14 rounded-xl overflow-hidden shadow-md"
               >
-                <Sparkles className="h-5 w-5 lg:h-6 lg:w-6 text-primary-600" />
+                <Image
+                  src="/images/hotel/logoH.jpg"
+                  alt="Logo Hôtel Sept-Îles"
+                  fill
+                  className="object-cover"
+                />
               </motion.div>
               <div className="hidden sm:block">
                 <h1 className="font-display text-xl lg:text-2xl font-bold text-white">
@@ -157,8 +163,13 @@ export function Navigation() {
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-ocean shadow-md">
-                      <Sparkles className="h-5 w-5 text-white" />
+                    <div className="relative h-10 w-10 rounded-xl overflow-hidden shadow-md">
+                      <Image
+                        src="/images/hotel/logoH.jpg"
+                        alt="Logo Hôtel Sept-Îles"
+                        fill
+                        className="object-cover"
+                      />
                     </div>
                     <div>
                       <h2 className="font-display text-lg font-bold text-primary-900">
