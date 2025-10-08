@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { Room } from '@/types/room'
+import { Room, transformApiRoomToRoom } from '@/types/room'
 
 // État initial
 interface RoomsState {
@@ -37,9 +37,21 @@ export const fetchRooms = createAsyncThunk(
     try {
       const { getAllChambres } = await import('@/services/api/routeApi')
       const response = await getAllChambres()
-      return response.data as Room[]
+      console.log('Réponse API complète:', response.data)
+
+      // L'API retourne { success, message, data, meta }
+      // Extraire le tableau de chambres depuis data
+      const apiRooms = response.data.data || response.data
+      console.log('Chambres API récupérées:', apiRooms)
+
+      // Transform API data to UI format
+      const transformedRooms = apiRooms.map(transformApiRoomToRoom)
+      console.log('Chambres transformées:', transformedRooms)
+
+      return transformedRooms
     } catch (error: any) {
       const message = error.response?.data?.message || error.message || 'Erreur inconnue'
+      console.error('Erreur fetchRooms:', error)
       return rejectWithValue(message)
     }
   }

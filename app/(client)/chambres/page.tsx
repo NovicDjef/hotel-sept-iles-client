@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
-import { 
-  Calendar, 
-  Users, 
-  Maximize2, 
+import {
+  Calendar,
+  Users,
+  Maximize2,
   Filter,
   SlidersHorizontal,
   Eye,
@@ -21,129 +21,24 @@ import {
 } from 'lucide-react'
 import { SearchBar } from '@/components/chambres/SearchBar'
 import { FilterSidebar } from '@/components/chambres/FilterSidebar'
-
-// Données temporaires (sera remplacé par l'API)
-const chambres = [
-  {
-    id: 1,
-    nom: 'Suite Royale',
-    categorie: 'Premium',
-    description: 'Notre suite la plus luxueuse avec vue panoramique sur le fleuve Saint-Laurent',
-    prix: 299,
-    capacite: 2,
-    superficie: 45,
-    images: [
-      '/images/rooms/suite-royale-1.svg',
-      '/images/rooms/suite-royale-2.svg',
-      '/images/rooms/suite-royale-3.svg',
-      '/images/rooms/suite-royale-4.svg',
-    ],
-    equipements: ['Vue fleuve', 'Jacuzzi', 'Balcon privé', 'King size', 'Mini-bar', 'Coffre-fort'],
-    note: 4.9,
-    avis: 127,
-    disponible: true
-  },
-  {
-    id: 2,
-    nom: 'Chambre Deluxe',
-    categorie: 'Standard',
-    description: 'Confort moderne avec tout l\'équipement nécessaire pour un séjour agréable',
-    prix: 189,
-    capacite: 2,
-    superficie: 32,
-    images: [
-      '/images/rooms/deluxe-1.svg',
-      '/images/rooms/deluxe-2.svg',
-      '/images/rooms/deluxe-3.svg',
-    ],
-    equipements: ['King size', 'Bureau', 'Mini-bar', 'Wi-Fi', 'TV 55"', 'Climatisation'],
-    note: 4.7,
-    avis: 89,
-    disponible: true
-  },
-  {
-    id: 3,
-    nom: 'Suite Familiale',
-    categorie: 'Famille',
-    description: 'Espace généreux parfait pour toute la famille avec deux chambres séparées',
-    prix: 249,
-    capacite: 4,
-    superficie: 55,
-    images: [
-      '/images/rooms/family-1.svg',
-      '/images/rooms/family-2.svg',
-      '/images/rooms/family-3.svg',
-      '/images/rooms/family-4.svg',
-    ],
-    equipements: ['2 chambres', 'Cuisine', 'Salon', 'Balcon', '2 salles de bain', 'Wi-Fi'],
-    note: 4.8,
-    avis: 156,
-    disponible: true
-  },
-  {
-    id: 4,
-    nom: 'Chambre Confort',
-    categorie: 'Standard',
-    description: 'Parfaite pour un séjour court, offrant tout le confort essentiel',
-    prix: 149,
-    capacite: 2,
-    superficie: 28,
-    images: [
-      '/images/rooms/confort-1.svg',
-      '/images/rooms/confort-2.svg',
-    ],
-    equipements: ['Queen size', 'Bureau', 'Wi-Fi', 'TV', 'Climatisation'],
-    note: 4.6,
-    avis: 73,
-    disponible: true
-  },
-  {
-    id: 5,
-    nom: 'Suite Exécutive',
-    categorie: 'Business',
-    description: 'Idéale pour les voyageurs d\'affaires avec espace de travail dédié',
-    prix: 269,
-    capacite: 2,
-    superficie: 40,
-    images: [
-      '/images/rooms/executive-1.svg',
-      '/images/rooms/executive-2.svg',
-      '/images/rooms/executive-3.svg',
-    ],
-    equipements: ['Bureau ergonomique', 'Fauteuil', 'Mini-bar', 'Coffre-fort', 'Vue ville'],
-    note: 4.8,
-    avis: 94,
-    disponible: true
-  },
-  {
-    id: 6,
-    nom: 'Suite Panoramique',
-    categorie: 'Premium',
-    description: 'Vue spectaculaire à 180° sur le fleuve et les montagnes',
-    prix: 329,
-    capacite: 2,
-    superficie: 50,
-    images: [
-      '/images/rooms/panoramique-1.svg',
-      '/images/rooms/panoramique-2.svg',
-      '/images/rooms/panoramique-3.svg',
-      '/images/rooms/panoramique-4.svg',
-    ],
-    equipements: ['Vue panoramique', 'Balcon', 'Baignoire spa', 'King size', 'Bar', 'Terrasse'],
-    note: 5.0,
-    avis: 203,
-    disponible: false
-  },
-]
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { fetchRooms } from '@/store/slices/roomsSlice'
 
 const categories = ['Toutes', 'Premium', 'Standard', 'Famille', 'Business']
 
 export default function ChambresPage() {
+  const dispatch = useAppDispatch()
+  const { filteredRooms, loading, error, filters } = useAppSelector((state) => state.rooms)
+
   const [filterOpen, setFilterOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('Toutes')
   const [sortBy, setSortBy] = useState('recommande')
 
-  const filteredChambres = chambres.filter(chambre => 
+  useEffect(() => {
+    dispatch(fetchRooms())
+  }, [dispatch])
+
+  const filteredChambres = filteredRooms.filter(chambre =>
     selectedCategory === 'Toutes' || chambre.categorie === selectedCategory
   )
 
@@ -247,9 +142,37 @@ export default function ChambresPage() {
                 ))}
               </div>
 
+              {/* Loading state */}
+              {loading && (
+                <div className="text-center py-16">
+                  <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent"></div>
+                  <p className="mt-4 text-neutral-600 text-lg">Chargement des chambres...</p>
+                </div>
+              )}
+
+              {/* Error state */}
+              {error && (
+                <div className="text-center py-16">
+                  <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4">
+                    <Filter className="h-8 w-8 text-red-600" />
+                  </div>
+                  <h3 className="font-display text-2xl font-bold text-neutral-900 mb-2">
+                    Erreur de chargement
+                  </h3>
+                  <p className="text-red-600 mb-6">{error}</p>
+                  <button
+                    onClick={() => dispatch(fetchRooms())}
+                    className="btn-primary"
+                  >
+                    Réessayer
+                  </button>
+                </div>
+              )}
+
               {/* Grid des chambres */}
-              <div className="grid md:grid-cols-2 gap-6">
-                {filteredChambres.map((chambre, index) => (
+              {!loading && !error && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {filteredChambres.map((chambre, index) => (
                   <motion.div
                     key={chambre.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -389,11 +312,12 @@ export default function ChambresPage() {
                       </div>
                     </div>
                   </motion.div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
               {/* Message si aucune chambre */}
-              {filteredChambres.length === 0 && (
+              {!loading && !error && filteredChambres.length === 0 && (
                 <div className="text-center py-16">
                   <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 mb-4">
                     <Filter className="h-8 w-8 text-neutral-400" />

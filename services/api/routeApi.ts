@@ -1,13 +1,15 @@
 import apiService from './Api'
-import { Room } from '@/types/room'
+import { Room, ApiRoom } from '@/types/room'
 
 // ==================== CHAMBRES ====================
 
 /**
- * Récupère toutes les chambres
+ * Récupère toutes les chambres (retourne le format API)
  */
+
+const hotelId = `cmggqdtba0000xxqtph1k8505`
 export const getAllChambres = () => {
-  return apiService.get<Room[]>('/chambres')
+  return apiService.get<ApiRoom[]>(`/api/v1/rooms/?hotelId=${hotelId}`)
 }
 
 /**

@@ -20,11 +20,16 @@ import {
 import { ServicesSelector } from '@/components/reservation/ServicesSelector'
 import { RecapitulatifReservation } from '@/components/reservation/RecapitulatifReservation'
 import { FormulaireClient } from '@/components/reservation/FormulaireClient'
-import { getRoomById } from '@/data/rooms'
+import { generateReceiptPDF } from '@/utils/generateReceipt'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { fetchRooms } from '@/store/slices/roomsSlice'
 
 export default function ReservationPage({ params }: { params: { chambreId: string } }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const dispatch = useAppDispatch()
+  const { rooms, loading } = useAppSelector((state) => state.rooms)
+
   const [currentStep, setCurrentStep] = useState(0) // 0 = Sélection dates, 1 = Services, 2 = Info, 3 = Paiement
   const [selectedServices, setSelectedServices] = useState<any[]>([])
   const [clientInfo, setClientInfo] = useState<any>(null)
@@ -34,22 +39,33 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
   const [checkOut, setCheckOut] = useState(searchParams.get('checkOut') || '')
   const [guests, setGuests] = useState(Number(searchParams.get('guests')) || 2)
 
-  // Récupérer les données de la chambre
-  const room = getRoomById(Number(params.chambreId))
-  const chambre = room ? {
+  useEffect(() => {
+    if (rooms.length === 0) {
+      dispatch(fetchRooms())
+    }
+  }, [dispatch, rooms.length])
+
+  // Récupérer les données de la chambre depuis Redux
+  const room = rooms.find(r => r.id === parseInt(params.chambreId))
+
+  if (loading || !room) {
+    return (
+      <div className="min-h-screen pt-16 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent mb-4"></div>
+          <p className="text-neutral-600">Chargement de la réservation...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const chambre = {
     id: params.chambreId,
     nom: room.nom,
     categorie: room.categorie,
     prix: room.prix,
     image: room.images[0],
     capacite: room.capacite
-  } : {
-    id: params.chambreId,
-    nom: 'Suite Royale',
-    categorie: 'Premium',
-    prix: 299,
-    image: '/images/rooms/suite-royale-1.svg',
-    capacite: 2
   }
 
   const calculateNights = () => {
@@ -88,6 +104,48 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
       setCurrentStep(currentStep - 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
+  }
+
+  const handlePaymentConfirmation = () => {
+    // Générer un numéro de réservation unique
+    const reservationNumber = `HSI-${Date.now().toString().slice(-8)}`
+
+    // Préparer les données pour le reçu
+    const receiptData = {
+      reservationNumber,
+      date: new Date().toLocaleDateString('fr-CA'),
+      chambre: {
+        nom: chambre.nom,
+        categorie: chambre.categorie,
+        prix: chambre.prix,
+      },
+      dateDebut: checkIn,
+      dateFin: checkOut,
+      nombreNuits: nights,
+      nombrePersonnes: guests,
+      client: {
+        nom: clientInfo?.nom || '',
+        prenom: clientInfo?.prenom || '',
+        email: clientInfo?.email || '',
+        telephone: clientInfo?.telephone || '',
+        adresse: clientInfo?.adresse || '',
+      },
+      services: selectedServices.map(s => ({
+        nom: s.nom,
+        prix: s.prix,
+        date: s.date,
+      })),
+      subtotal,
+      tps,
+      tvq,
+      total,
+    }
+
+    // Générer le PDF
+    generateReceiptPDF(receiptData)
+
+    // Afficher un message de succès
+    alert('Paiement confirmé ! Votre reçu a été téléchargé.')
   }
 
   return (
@@ -425,7 +483,7 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
                 </button>
 
                 <button
-                  onClick={currentStep === 3 ? () => alert('Paiement en cours...') : handleNext}
+                  onClick={currentStep === 3 ? handlePaymentConfirmation : handleNext}
                   disabled={currentStep === 0 && (!checkIn || !checkOut)}
                   className="btn-primary group disabled:opacity-50 disabled:cursor-not-allowed"
                 >

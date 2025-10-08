@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -17,12 +18,20 @@ import {
   Bath,
   Wind
 } from 'lucide-react'
-import { rooms } from '@/data/rooms'
-
-// Sélectionner les 3 premières chambres pour la page d'accueil
-const featuredRooms = rooms.slice(0, 3)
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { fetchRooms } from '@/store/slices/roomsSlice'
 
 export function FeaturedRooms() {
+  const dispatch = useAppDispatch()
+  const { rooms, loading, error } = useAppSelector((state) => state.rooms)
+
+  useEffect(() => {
+    dispatch(fetchRooms())
+  }, [dispatch])
+
+  // Sélectionner les 3 premières chambres pour la page d'accueil
+  const featuredRooms = rooms.slice(0, 3)
+  console.log('Chambres en vedette:', featuredRooms)
   return (
     <section className="relative py-16 lg:py-20 bg-gradient-to-b from-white via-neutral-50/50 to-neutral-50 overflow-hidden">
       {/* Decorative elements */}
@@ -52,8 +61,22 @@ export function FeaturedRooms() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
-          {featuredRooms.map((room, index) => (
+        {loading && (
+          <div className="text-center py-12">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent"></div>
+            <p className="mt-4 text-neutral-600">Chargement des chambres...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-12">
+            <p className="text-red-600">Erreur: {error}</p>
+          </div>
+        )}
+
+        {!loading && !error && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
+            {featuredRooms.map((room, index) => (
             <motion.div
               key={room.id}
               initial={{ opacity: 0, y: 20 }}
@@ -191,22 +214,25 @@ export function FeaturedRooms() {
               </div>
             </motion.div>
           ))}
-        </div>
+          </div>
+        )}
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center"
-        >
-          <Link
-            href="/chambres"
-            className="btn-secondary group"
+        {!loading && !error && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center"
           >
-            Voir toutes nos chambres
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </motion.div>
+            <Link
+              href="/chambres"
+              className="btn-secondary group"
+            >
+              Voir toutes nos chambres
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </motion.div>
+        )}
       </div>
     </section>
   )

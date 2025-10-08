@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
-import { 
+import {
   Calendar,
   Users,
   Maximize2,
@@ -24,59 +24,59 @@ import {
 import { ImageGallery } from '@/components/chambres/ImageGallery'
 import { BookingCard } from '@/components/chambres/BookingCard'
 import { ReviewsSection } from '@/components/chambres/ReviewsSection'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { fetchRooms } from '@/store/slices/roomsSlice'
+import { Room } from '@/types/room'
 
 export default function ChambreDetailPage({ params }: { params: { id: string } }) {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
 
-  // Données temporaires (sera remplacé par l'API)
-  const chambre = {
-    id: params.id,
-    nom: 'Suite Royale',
-    categorie: 'Premium',
-    description: 'Notre suite la plus luxueuse offre une expérience inégalée avec une vue panoramique spectaculaire sur le fleuve Saint-Laurent. Conçue pour les voyageurs exigeants, elle combine élégance classique et confort moderne.',
-    prixBase: 299,
-    capacite: 2,
-    superficie: 45,
-    images: [
-      '/images/rooms/suite-royale-1.svg',
-      '/images/rooms/suite-royale-2.svg',
-      '/images/rooms/suite-royale-3.svg',
-      '/images/rooms/suite-royale-4.svg',
-      '/images/rooms/suite-royale-5.svg',
-      '/images/rooms/suite-royale-6.svg',
-    ],
-    equipements: [
-      { nom: 'Wi-Fi haut débit gratuit', disponible: true },
-      { nom: 'TV 4K 65 pouces', disponible: true },
-      { nom: 'Lit King size premium', disponible: true },
-      { nom: 'Climatisation intelligente', disponible: true },
-      { nom: 'Mini-bar garni', disponible: true },
-      { nom: 'Coffre-fort électronique', disponible: true },
-      { nom: 'Machine Nespresso', disponible: true },
-      { nom: 'Peignoirs et pantoufles', disponible: true },
-      { nom: 'Bureau ergonomique', disponible: true },
-      { nom: 'Balcon privé avec vue fleuve', disponible: true },
-      { nom: 'Jacuzzi 2 places', disponible: true },
-      { nom: 'Douche à effet pluie', disponible: true },
-    ],
-    caracteristiques: [
-      { label: 'Vue', valeur: 'Fleuve Saint-Laurent' },
-      { label: 'Étage', valeur: '10ème' },
-      { label: 'Lit', valeur: 'King size (200x200cm)' },
-      { label: 'Salle de bain', valeur: 'Privée avec baignoire spa' },
-    ],
-    politiques: {
-      checkin: '15h00',
-      checkout: '11h00',
-      annulation: 'Gratuite jusqu\'à 48h avant l\'arrivée',
-      animaux: false,
-      fumeur: false,
-    },
-    note: 4.9,
-    avisTotal: 127,
-    disponible: true
+  const dispatch = useAppDispatch()
+  const { rooms, loading } = useAppSelector((state) => state.rooms)
+
+  useEffect(() => {
+    if (rooms.length === 0) {
+      dispatch(fetchRooms())
+    }
+  }, [dispatch, rooms.length])
+
+  // Trouver la chambre par ID
+  const chambre = rooms.find(r => r.id === parseInt(params.id))
+
+  if (loading || !chambre) {
+    return (
+      <div className="min-h-screen pt-16 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent mb-4"></div>
+          <p className="text-neutral-600">Chargement de la chambre...</p>
+        </div>
+      </div>
+    )
   }
+
+  // Convertir les équipements string[] en objets pour l'affichage
+  const equipementsFormatted = chambre.equipements.map(eq => ({
+    nom: eq,
+    disponible: true
+  }))
+
+  // Politiques par défaut
+  const politiques = {
+    checkin: '15h00',
+    checkout: '11h00',
+    annulation: 'Gratuite jusqu\'à 48h avant l\'arrivée',
+    animaux: false,
+    fumeur: false,
+  }
+
+  // Caractéristiques basées sur les données de la chambre
+  const caracteristiques = [
+    { label: 'Superficie', valeur: `${chambre.superficie} m²` },
+    { label: 'Capacité', valeur: `${chambre.capacite} personne${chambre.capacite > 1 ? 's' : ''}` },
+    { label: 'Catégorie', valeur: chambre.categorie },
+    { label: 'Prix', valeur: `${chambre.prix}$ CAD / nuit` },
+  ]
 
   return (
     <div className="min-h-screen pt-16 bg-neutral-50">
@@ -231,7 +231,7 @@ export default function ChambreDetailPage({ params }: { params: { id: string } }
                   </div>
                   <div>
                     <div className="text-sm text-neutral-600">Check-in</div>
-                    <div className="font-semibold text-neutral-900">{chambre.politiques.checkin}</div>
+                    <div className="font-semibold text-neutral-900">{politiques.checkin}</div>
                   </div>
                 </div>
               </div>
@@ -263,7 +263,7 @@ export default function ChambreDetailPage({ params }: { params: { id: string } }
                 Caractéristiques
               </h2>
               <div className="grid md:grid-cols-2 gap-4">
-                {chambre.caracteristiques.map((carac, index) => (
+                {caracteristiques.map((carac, index) => (
                   <div key={index} className="flex items-start gap-3 p-4 rounded-xl bg-neutral-50">
                     <Check className="h-5 w-5 text-primary-600 mt-0.5 flex-shrink-0" />
                     <div>
@@ -286,7 +286,7 @@ export default function ChambreDetailPage({ params }: { params: { id: string } }
                 Équipements & Services
               </h2>
               <div className="grid md:grid-cols-2 gap-3">
-                {chambre.equipements.map((equipement, index) => (
+                {equipementsFormatted.map((equipement, index) => (
                   <div
                     key={index}
                     className="flex items-center gap-3 p-3 rounded-xl bg-neutral-50"
@@ -319,7 +319,7 @@ export default function ChambreDetailPage({ params }: { params: { id: string } }
                   <Shield className="h-5 w-5 text-green-600 mt-0.5" />
                   <div>
                     <div className="font-semibold text-green-900 mb-1">Annulation flexible</div>
-                    <div className="text-sm text-green-700">{chambre.politiques.annulation}</div>
+                    <div className="text-sm text-green-700">{politiques.annulation}</div>
                   </div>
                 </div>
 
@@ -328,7 +328,7 @@ export default function ChambreDetailPage({ params }: { params: { id: string } }
                     <Clock className="h-5 w-5 text-primary-600 mt-0.5" />
                     <div>
                       <div className="text-sm text-neutral-600">Check-in</div>
-                      <div className="font-semibold text-neutral-900">À partir de {chambre.politiques.checkin}</div>
+                      <div className="font-semibold text-neutral-900">À partir de {politiques.checkin}</div>
                     </div>
                   </div>
 
@@ -336,12 +336,12 @@ export default function ChambreDetailPage({ params }: { params: { id: string } }
                     <Clock className="h-5 w-5 text-primary-600 mt-0.5" />
                     <div>
                       <div className="text-sm text-neutral-600">Check-out</div>
-                      <div className="font-semibold text-neutral-900">Avant {chambre.politiques.checkout}</div>
+                      <div className="font-semibold text-neutral-900">Avant {politiques.checkout}</div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50">
-                    {chambre.politiques.animaux ? (
+                    {politiques.animaux ? (
                       <Check className="h-5 w-5 text-green-600" />
                     ) : (
                       <XIcon className="h-5 w-5 text-red-500" />
@@ -350,7 +350,7 @@ export default function ChambreDetailPage({ params }: { params: { id: string } }
                   </div>
 
                   <div className="flex items-center gap-3 p-4 rounded-xl bg-neutral-50">
-                    {chambre.politiques.fumeur ? (
+                    {politiques.fumeur ? (
                       <Check className="h-5 w-5 text-green-600" />
                     ) : (
                       <XIcon className="h-5 w-5 text-red-500" />
@@ -362,7 +362,7 @@ export default function ChambreDetailPage({ params }: { params: { id: string } }
             </motion.div>
 
             {/* Avis */}
-            <ReviewsSection chambreId={chambre.id} note={chambre.note} total={chambre.avisTotal} />
+            <ReviewsSection chambreId={chambre.id} note={chambre.note} total={chambre.avis} />
           </div>
 
           {/* Sidebar - Carte de réservation */}

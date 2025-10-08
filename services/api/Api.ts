@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 // const BASE_URL = 'https://api.novic.dev'
-const BASE_URL = `http://192.168.1.86:3000/`
-const HotelId = "cmggqdtba0000xxqtph1k8505"
+const BASE_URL = `http://localhost:5001`
+const hotelId = `cmggqdtba0000xxqtph1k8505`
 
 const apiService = axios.create({
   baseURL: BASE_URL,
@@ -17,6 +17,12 @@ const apiService = axios.create({
 // Intercepteur de requête pour ajouter le token
 apiService.interceptors.request.use(
   async (config) => {
+    console.log('🔵 API Request:', {
+      baseURL: config.baseURL,
+      url: config.url,
+      fullURL: `${config.baseURL}${config.url}`
+    })
+
     try {
       // Pour Next.js, on utilise localStorage au lieu d'AsyncStorage
       if (typeof window !== 'undefined') {
@@ -80,4 +86,4 @@ apiService.interceptors.response.use(
 )
 
 export default apiService
-export { BASE_URL }
+export { BASE_URL, hotelId }
