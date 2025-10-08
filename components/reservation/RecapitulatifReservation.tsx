@@ -10,7 +10,8 @@ interface RecapitulatifReservationProps {
   selectedServices: any[]
   total: number
   subtotal: number
-  taxes: number
+  tps: number
+  tvq: number
 }
 
 export function RecapitulatifReservation({
@@ -19,7 +20,8 @@ export function RecapitulatifReservation({
   selectedServices,
   total,
   subtotal,
-  taxes
+  tps,
+  tvq
 }: RecapitulatifReservationProps) {
   const chambrePrix = nights * chambre.prix
   const servicesPrix = selectedServices.reduce((sum, s) => sum + s.prix, 0)
@@ -78,8 +80,12 @@ export function RecapitulatifReservation({
           <span className="font-semibold text-neutral-900">{subtotal.toFixed(2)}$</span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-neutral-600">Taxes et frais (15%)</span>
-          <span className="font-semibold text-neutral-900">{taxes.toFixed(2)}$</span>
+          <span className="text-neutral-600">T.P.S (5%)</span>
+          <span className="font-semibold text-neutral-900">{tps.toFixed(2)}$</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-neutral-600">T.V.Q (9,975%)</span>
+          <span className="font-semibold text-neutral-900">{tvq.toFixed(2)}$</span>
         </div>
       </div>
 

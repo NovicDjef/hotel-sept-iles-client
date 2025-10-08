@@ -3,43 +3,11 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Users, Maximize2, Eye, ArrowRight } from 'lucide-react'
+import { Users, Maximize2, Eye, ArrowRight, Calendar } from 'lucide-react'
+import { rooms } from '@/data/rooms'
 
-const featuredRooms = [
-  {
-    id: 1,
-    name: 'Suite Royale',
-    category: 'Premium',
-    description: 'Notre suite la plus luxueuse avec vue panoramique sur le fleuve',
-    price: 299,
-    capacity: 2,
-    size: 45,
-    image: '/images/rooms/suite-royale.jpg',
-    features: ['Vue fleuve', 'Jacuzzi', 'Balcon privé']
-  },
-  {
-    id: 2,
-    name: 'Chambre Deluxe',
-    category: 'Standard',
-    description: 'Confort moderne avec tout l\'équipement nécessaire',
-    price: 189,
-    capacity: 2,
-    size: 32,
-    image: '/images/rooms/deluxe.jpg',
-    features: ['King size', 'Bureau', 'Mini-bar']
-  },
-  {
-    id: 3,
-    name: 'Suite Familiale',
-    category: 'Famille',
-    description: 'Espace généreux pour toute la famille',
-    price: 249,
-    capacity: 4,
-    size: 55,
-    image: '/images/rooms/family-suite.jpg',
-    features: ['2 chambres', 'Cuisine', 'Salon']
-  }
-]
+// Sélectionner les 3 premières chambres pour la page d'accueil
+const featuredRooms = rooms.slice(0, 3)
 
 export function FeaturedRooms() {
   return (
@@ -72,35 +40,41 @@ export function FeaturedRooms() {
             >
               <div className="relative aspect-chambre overflow-hidden">
                 <Image
-                  src={room.image}
-                  alt={room.name}
+                  src={room.images[0]}
+                  alt={room.nom}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                 />
-                
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute bottom-4 left-4 right-4">
+
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-4 left-4 right-4 flex gap-2">
                     <Link
                       href={`/chambres/${room.id}`}
-                      className="btn-primary w-full justify-center group/btn"
+                      className="btn-secondary flex-1 justify-center group/btn bg-white/20 border-white text-white hover:bg-white hover:text-primary-600"
                     >
                       <Eye className="h-4 w-4" />
-                      Voir les détails
-                      <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                      Détails
+                    </Link>
+                    <Link
+                      href={`/reservation?chambreId=${room.id}`}
+                      className="btn-primary flex-1 justify-center group/btn shadow-xl"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      Réserver
                     </Link>
                   </div>
                 </div>
 
                 <div className="absolute top-4 left-4">
                   <span className="badge-gold backdrop-blur-md">
-                    {room.category}
+                    {room.categorie}
                   </span>
                 </div>
 
                 <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl px-3 py-2 shadow-md">
                   <div className="text-xs text-neutral-600">À partir de</div>
                   <div className="font-display text-xl font-bold text-primary-600">
-                    {room.price}$
+                    {room.prix}$
                     <span className="text-sm font-normal text-neutral-500">/nuit</span>
                   </div>
                 </div>
@@ -108,9 +82,9 @@ export function FeaturedRooms() {
 
               <div className="p-6">
                 <h3 className="font-display text-2xl font-bold text-neutral-900 mb-2 group-hover:text-primary-600 transition-colors">
-                  {room.name}
+                  {room.nom}
                 </h3>
-                
+
                 <p className="text-neutral-600 text-sm mb-4 line-clamp-2">
                   {room.description}
                 </p>
@@ -118,16 +92,16 @@ export function FeaturedRooms() {
                 <div className="flex items-center gap-4 text-sm text-neutral-500 mb-4 pb-4 border-b border-neutral-100">
                   <div className="flex items-center gap-1.5">
                     <Users className="h-4 w-4" />
-                    <span>{room.capacity} pers.</span>
+                    <span>{room.capacite} pers.</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Maximize2 className="h-4 w-4" />
-                    <span>{room.size} m²</span>
+                    <span>{room.superficie} m²</span>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {room.features.map((feature) => (
+                  {room.equipements.slice(0, 3).map((feature) => (
                     <span
                       key={feature}
                       className="text-xs bg-neutral-100 text-neutral-700 px-2.5 py-1 rounded-full"

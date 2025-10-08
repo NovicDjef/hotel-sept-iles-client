@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
-import { 
+import {
   Calendar,
   Users,
   ArrowRight,
@@ -20,26 +20,36 @@ import {
 import { ServicesSelector } from '@/components/reservation/ServicesSelector'
 import { RecapitulatifReservation } from '@/components/reservation/RecapitulatifReservation'
 import { FormulaireClient } from '@/components/reservation/FormulaireClient'
+import { getRoomById } from '@/data/rooms'
 
 export default function ReservationPage({ params }: { params: { chambreId: string } }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [currentStep, setCurrentStep] = useState(1)
+  const [currentStep, setCurrentStep] = useState(0) // 0 = Sélection dates, 1 = Services, 2 = Info, 3 = Paiement
   const [selectedServices, setSelectedServices] = useState<any[]>([])
   const [clientInfo, setClientInfo] = useState<any>(null)
 
   // Récupérer les paramètres de l'URL
-  const checkIn = searchParams.get('checkIn') || ''
-  const checkOut = searchParams.get('checkOut') || ''
-  const guests = Number(searchParams.get('guests')) || 2
+  const [checkIn, setCheckIn] = useState(searchParams.get('checkIn') || '')
+  const [checkOut, setCheckOut] = useState(searchParams.get('checkOut') || '')
+  const [guests, setGuests] = useState(Number(searchParams.get('guests')) || 2)
 
-  // Données temporaires (sera remplacé par l'API)
-  const chambre = {
+  // Récupérer les données de la chambre
+  const room = getRoomById(Number(params.chambreId))
+  const chambre = room ? {
+    id: params.chambreId,
+    nom: room.nom,
+    categorie: room.categorie,
+    prix: room.prix,
+    image: room.images[0],
+    capacite: room.capacite
+  } : {
     id: params.chambreId,
     nom: 'Suite Royale',
     categorie: 'Premium',
     prix: 299,
-    image: '/images/rooms/suite-royale-1.svg'
+    image: '/images/rooms/suite-royale-1.svg',
+    capacite: 2
   }
 
   const calculateNights = () => {
@@ -54,10 +64,13 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
   const chambrePrix = nights * chambre.prix
   const servicesPrix = selectedServices.reduce((sum, s) => sum + s.prix, 0)
   const subtotal = chambrePrix + servicesPrix
-  const taxes = subtotal * 0.15
+  const tps = subtotal * 0.05      // TPS : 5%
+  const tvq = subtotal * 0.09975   // TVQ : 9,975%
+  const taxes = tps + tvq
   const total = subtotal + taxes
 
   const steps = [
+    { number: 0, title: 'Dates', icon: Calendar },
     { number: 1, title: 'Services', icon: Sparkles },
     { number: 2, title: 'Informations', icon: Users },
     { number: 3, title: 'Paiement', icon: CreditCard },
@@ -71,7 +84,7 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
   }
 
   const handleBack = () => {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
@@ -138,7 +151,7 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
 
             {/* Mobile step indicator */}
             <div className="md:hidden text-sm font-medium text-neutral-600">
-              Étape {currentStep}/3
+              Étape {currentStep + 1}/4
             </div>
           </div>
         </div>
@@ -174,21 +187,30 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
                       {chambre.nom}
                     </h2>
                     <div className="flex flex-wrap gap-4 text-sm text-neutral-600">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          {new Date(checkIn).toLocaleDateString('fr-CA')} -{' '}
-                          {new Date(checkOut).toLocaleDateString('fr-CA')}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Users className="h-4 w-4" />
-                        <span>{guests} personne{guests > 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4" />
-                        <span>{nights} nuit{nights > 1 ? 's' : ''}</span>
-                      </div>
+                      {checkIn && checkOut ? (
+                        <>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                              {new Date(checkIn).toLocaleDateString('fr-CA')} -{' '}
+                              {new Date(checkOut).toLocaleDateString('fr-CA')}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Users className="h-4 w-4" />
+                            <span>{guests} personne{guests > 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-4 w-4" />
+                            <span>{nights} nuit{nights > 1 ? 's' : ''}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-amber-600">
+                          <Info className="h-4 w-4" />
+                          <span className="font-medium">Veuillez sélectionner vos dates de séjour</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -209,6 +231,94 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
               >
+                {/* Step 0: Sélection des dates */}
+                {currentStep === 0 && (
+                  <div className="card p-6">
+                    <h2 className="font-display text-2xl font-bold text-neutral-900 mb-6">
+                      Sélectionnez vos dates de séjour
+                    </h2>
+
+                    <div className="space-y-6">
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                            Date d'arrivée *
+                          </label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+                            <input
+                              type="date"
+                              required
+                              value={checkIn}
+                              onChange={(e) => setCheckIn(e.target.value)}
+                              min={new Date().toISOString().split('T')[0]}
+                              className="input-custom pl-11"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                            Date de départ *
+                          </label>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+                            <input
+                              type="date"
+                              required
+                              value={checkOut}
+                              onChange={(e) => setCheckOut(e.target.value)}
+                              min={checkIn || new Date().toISOString().split('T')[0]}
+                              className="input-custom pl-11"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                          Nombre de personnes *
+                        </label>
+                        <div className="relative">
+                          <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+                          <select
+                            value={guests}
+                            onChange={(e) => setGuests(Number(e.target.value))}
+                            className="input-custom pl-11"
+                          >
+                            {Array.from({ length: chambre.capacite }, (_, i) => i + 1).map((num) => (
+                              <option key={num} value={num}>
+                                {num} {num > 1 ? 'personnes' : 'personne'}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Afficher le nombre de nuits et le prix */}
+                      {checkIn && checkOut && (
+                        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-neutral-700">Durée du séjour:</span>
+                            <span className="font-bold text-primary-700">
+                              {calculateNights()} {calculateNights() > 1 ? 'nuits' : 'nuit'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-neutral-700">Prix estimé:</span>
+                            <span className="font-display text-2xl font-bold text-primary-600">
+                              {chambre.prix * calculateNights()}$
+                            </span>
+                          </div>
+                          <div className="text-xs text-neutral-600 mt-2">
+                            {chambre.prix}$ × {calculateNights()} {calculateNights() > 1 ? 'nuits' : 'nuit'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {currentStep === 1 && (
                   <ServicesSelector
                     selectedServices={selectedServices}
@@ -307,7 +417,7 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
               <div className="flex items-center justify-between mt-8">
                 <button
                   onClick={handleBack}
-                  disabled={currentStep === 1}
+                  disabled={currentStep === 0}
                   className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -316,7 +426,8 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
 
                 <button
                   onClick={currentStep === 3 ? () => alert('Paiement en cours...') : handleNext}
-                  className="btn-primary group"
+                  disabled={currentStep === 0 && (!checkIn || !checkOut)}
+                  className="btn-primary group disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {currentStep === 3 ? (
                     <>
@@ -342,7 +453,8 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
                   selectedServices={selectedServices}
                   total={total}
                   subtotal={subtotal}
-                  taxes={taxes}
+                  tps={tps}
+                  tvq={tvq}
                 />
               </div>
             </div>

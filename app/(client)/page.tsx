@@ -28,7 +28,7 @@ export default function HomePage() {
       <HeroSection />
 
       {/* Section Avantages */}
-      <section className="py-16 lg:py-24 bg-white">
+      {/* <section className="py-16 lg:py-24 bg-white">
         <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -93,7 +93,7 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Chambres en vedette */}
       <FeaturedRooms />

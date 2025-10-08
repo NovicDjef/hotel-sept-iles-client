@@ -255,6 +255,11 @@ img {
   .aspect-service {
     aspect-ratio: 16 / 9;
   }
+
+  /* Custom scales */
+  .scale-115 {
+    transform: scale(1.15);
+  }
 }
 
 /* Animations */
