@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { use, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
+import { Elements } from '@stripe/react-stripe-js'
 import {
   Calendar,
   Users,
@@ -15,16 +16,28 @@ import {
   Tag,
   CreditCard,
   ShieldCheck,
-  Info
+  Info,
+  CheckCircle2
 } from 'lucide-react'
 import { ServicesSelector } from '@/components/reservation/ServicesSelector'
 import { RecapitulatifReservation } from '@/components/reservation/RecapitulatifReservation'
 import { FormulaireClient } from '@/components/reservation/FormulaireClient'
+import { StripePaymentForm } from '@/components/reservation/StripePaymentForm'
 import { generateReceiptPDF } from '@/utils/generateReceipt'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchRooms } from '@/store/slices/roomsSlice'
+import { getStripe } from '@/lib/stripe'
+import {
+  calculateReservationPrice,
+  createGuestReservation,
+  confirmReservationPayment
+} from '@/services/api/routeApi'
 
-export default function ReservationPage({ params }: { params: { chambreId: string } }) {
+export default function ReservationPage({ params }: { params: Promise<{ chambreId: string }> }) {
+  // Unwrap params avec React.use()
+  const unwrappedParams = use(params)
+  const chambreId = unwrappedParams.chambreId
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const dispatch = useAppDispatch()
@@ -33,6 +46,10 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
   const [currentStep, setCurrentStep] = useState(0) // 0 = Sélection dates, 1 = Services, 2 = Info, 3 = Paiement
   const [selectedServices, setSelectedServices] = useState<any[]>([])
   const [clientInfo, setClientInfo] = useState<any>(null)
+  const [reservationId, setReservationId] = useState<string | null>(null)
+  const [paymentProcessing, setPaymentProcessing] = useState(false)
+  const [calculatedPrice, setCalculatedPrice] = useState<any>(null)
+  const [stripePromise] = useState(() => getStripe())
 
   // Récupérer les paramètres de l'URL
   const [checkIn, setCheckIn] = useState(searchParams.get('checkIn') || '')
@@ -46,7 +63,7 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
   }, [dispatch, rooms.length])
 
   // Récupérer les données de la chambre depuis Redux
-  const room = rooms.find(r => r.id === parseInt(params.chambreId))
+  const room = rooms.find(r => r.id === chambreId)
 
   if (loading || !room) {
     return (
@@ -60,7 +77,7 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
   }
 
   const chambre = {
-    id: params.chambreId,
+    id: chambreId,
     nom: room.nom,
     categorie: room.categorie,
     prix: room.prix,
@@ -76,8 +93,9 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   }
 
-  const nights = calculateNights()
-  const chambrePrix = nights * chambre.prix
+  // Utiliser les données calculées par le backend si disponibles, sinon calculer côté client
+  const nights = calculatedPrice?.numberOfNights || calculateNights()
+  const chambrePrix = calculatedPrice?.totalPrice || (nights * chambre.prix)
   const servicesPrix = selectedServices.reduce((sum, s) => sum + s.prix, 0)
   const subtotal = chambrePrix + servicesPrix
   const tps = subtotal * 0.05      // TPS : 5%
@@ -92,8 +110,112 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
     { number: 3, title: 'Paiement', icon: CreditCard },
   ]
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < 3) {
+      // ÉTAPE 1 : Quand on quitte l'écran de sélection de dates, calculer le prix
+      if (currentStep === 0 && checkIn && checkOut) {
+        // Validation : La date de départ doit être après la date d'arrivée
+        const checkInDate = new Date(checkIn)
+        const checkOutDate = new Date(checkOut)
+
+        if (checkOutDate <= checkInDate) {
+          alert('La date de départ doit être au moins 1 jour après la date d\'arrivée')
+          return
+        }
+
+        try {
+          // Convertir les dates au format ISO complet (YYYY-MM-DDTHH:mm:ss.sssZ)
+          const checkInISO = checkInDate.toISOString()
+          const checkOutISO = checkOutDate.toISOString()
+
+          console.log('📊 Calcul du prix avec:', {
+            roomId: chambreId,
+            checkInDate: checkInISO,
+            checkOutDate: checkOutISO,
+            numberOfGuests: guests,
+          })
+
+          const response = await calculateReservationPrice({
+            roomId: chambreId,
+            checkInDate: checkInISO,
+            checkOutDate: checkOutISO,
+            numberOfGuests: guests,
+          })
+
+          console.log('✅ Prix calculé:', response.data.data)
+          setCalculatedPrice(response.data.data)
+        } catch (error: any) {
+          console.error('❌ Erreur lors du calcul du prix:', error)
+          console.error('📋 Détails complets de l\'erreur:', error.response?.data)
+          console.error('🔍 Détails de validation:', JSON.stringify(error.response?.data?.error, null, 2))
+
+          // Extraire le message d'erreur le plus détaillé possible
+          let errorMessage = 'Erreur lors du calcul du prix'
+
+          if (error.response?.data?.error) {
+            // Si c'est un objet d'erreurs de validation (comme Zod ou class-validator)
+            const validationErrors = error.response.data.error
+            if (typeof validationErrors === 'object') {
+              errorMessage = 'Erreurs de validation:\n' +
+                Object.entries(validationErrors)
+                  .map(([field, msg]) => `- ${field}: ${msg}`)
+                  .join('\n')
+            } else {
+              errorMessage = validationErrors.toString()
+            }
+          } else if (error.response?.data?.message) {
+            errorMessage = error.response.data.message
+          }
+
+          alert(errorMessage)
+          return
+        }
+      }
+
+      // ÉTAPE 2 : Quand on quitte l'écran d'informations client, créer la réservation PENDING
+      if (currentStep === 2 && clientInfo) {
+        try {
+          // Convertir les dates au format ISO complet
+          const checkInISO = new Date(checkIn).toISOString()
+          const checkOutISO = new Date(checkOut).toISOString()
+
+          console.log('📝 Création réservation avec:', {
+            roomId: chambreId,
+            checkInDate: checkInISO,
+            checkOutDate: checkOutISO,
+            numberOfGuests: guests,
+            firstName: clientInfo.prenom,
+            lastName: clientInfo.nom,
+            email: clientInfo.email,
+          })
+
+          const response = await createGuestReservation({
+            roomId: chambreId,
+            checkInDate: checkInISO,
+            checkOutDate: checkOutISO,
+            numberOfGuests: guests,
+            firstName: clientInfo.prenom,
+            lastName: clientInfo.nom,
+            email: clientInfo.email,
+            phone: clientInfo.telephone,
+            address: clientInfo.adresse,
+            specialRequests: clientInfo.commentaires,
+          })
+
+          console.log('✅ Réservation créée:', response.data.data)
+          setReservationId(response.data.data.reservation.id)
+        } catch (error: any) {
+          console.error('❌ Erreur lors de la création de la réservation:', error)
+          console.error('Détails de l\'erreur:', error.response?.data)
+
+          const errorMessage = error.response?.data?.message ||
+                             error.response?.data?.error ||
+                             'Erreur lors de la création de la réservation'
+          alert(errorMessage)
+          return
+        }
+      }
+
       setCurrentStep(currentStep + 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
@@ -106,79 +228,106 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
     }
   }
 
-  const handlePaymentConfirmation = () => {
-    // Générer un numéro de réservation unique
-    const reservationNumber = `HSI-${Date.now().toString().slice(-8)}`
-
-    // Préparer les données pour le reçu
-    const receiptData = {
-      reservationNumber,
-      date: new Date().toLocaleDateString('fr-CA'),
-      chambre: {
-        nom: chambre.nom,
-        categorie: chambre.categorie,
-        prix: chambre.prix,
-      },
-      dateDebut: checkIn,
-      dateFin: checkOut,
-      nombreNuits: nights,
-      nombrePersonnes: guests,
-      client: {
-        nom: clientInfo?.nom || '',
-        prenom: clientInfo?.prenom || '',
-        email: clientInfo?.email || '',
-        telephone: clientInfo?.telephone || '',
-        adresse: clientInfo?.adresse || '',
-      },
-      services: selectedServices.map(s => ({
-        nom: s.nom,
-        prix: s.prix,
-        date: s.date,
-      })),
-      subtotal,
-      tps,
-      tvq,
-      total,
+  // ÉTAPE 3 : Gérer le paiement Stripe
+  const handlePaymentSuccess = async (paymentMethodId: string) => {
+    if (!reservationId) {
+      alert('Erreur: ID de réservation manquant')
+      return
     }
 
-    // Générer le PDF
-    generateReceiptPDF(receiptData)
+    setPaymentProcessing(true)
+    try {
+      const response = await confirmReservationPayment(reservationId, {
+        paymentMethodId,
+      })
 
-    // Afficher un message de succès
-    alert('Paiement confirmé ! Votre reçu a été téléchargé.')
+      const confirmedReservation = response.data.data
+
+      // Générer le reçu PDF
+      const receiptData = {
+        reservationNumber: confirmedReservation.reservationNumber,
+        date: new Date().toLocaleDateString('fr-CA'),
+        chambre: {
+          nom: chambre.nom,
+          categorie: chambre.categorie,
+          prix: chambre.prix,
+        },
+        dateDebut: checkIn,
+        dateFin: checkOut,
+        nombreNuits: nights,
+        nombrePersonnes: guests,
+        client: {
+          nom: clientInfo?.nom || '',
+          prenom: clientInfo?.prenom || '',
+          email: clientInfo?.email || '',
+          telephone: clientInfo?.telephone || '',
+          adresse: clientInfo?.adresse || '',
+        },
+        services: selectedServices.map(s => ({
+          nom: s.nom,
+          prix: s.prix,
+          date: s.date,
+        })),
+        subtotal,
+        tps,
+        tvq,
+        total,
+      }
+
+      generateReceiptPDF(receiptData)
+
+      // Rediriger vers la page de confirmation
+      alert('Paiement confirmé ! Votre reçu a été téléchargé.')
+      router.push(`/reservation/confirmation/${confirmedReservation.id}`)
+    } catch (error: any) {
+      console.error('Erreur lors de la confirmation du paiement:', error)
+      alert(error.response?.data?.message || 'Erreur lors du paiement')
+    } finally {
+      setPaymentProcessing(false)
+    }
+  }
+
+  const handlePaymentError = (error: string) => {
+    console.error('Erreur de paiement:', error)
   }
 
   return (
-    <div className="min-h-screen pt-16 bg-neutral-50">
-      {/* Header */}
-      <section className="bg-white border-b border-neutral-200 sticky top-16 z-40">
+    <div className="min-h-screen pt-16 bg-gradient-to-b from-neutral-50 to-white">
+      {/* Header avec bouton retour */}
+      <section className="bg-white border-b border-neutral-200">
         <div className="container-custom py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 text-neutral-700 hover:text-primary-600 transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span className="font-medium">Retour</span>
-            </button>
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-neutral-700 hover:text-primary-600 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span className="font-medium">Retour</span>
+          </button>
+        </div>
+      </section>
 
-            {/* Stepper */}
-            <div className="hidden md:flex items-center gap-2">
+      {/* Stepper Centralisé */}
+      <section className="bg-white border-b border-neutral-200 sticky top-16 z-40">
+        <div className="container-custom py-6">
+          {/* Stepper horizontal centralisé */}
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center justify-center">
               {steps.map((step, index) => {
                 const Icon = step.icon
                 const isActive = currentStep === step.number
                 const isCompleted = currentStep > step.number
 
                 return (
-                  <div key={step.number} className="flex items-center">
-                    <div className="flex items-center gap-2">
+                  <div key={step.number} className="flex items-center flex-1">
+                    <div className="flex flex-col items-center flex-1">
+                      {/* Icône avec animation */}
                       <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-full transition-all ${
+                        className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
                           isCompleted
-                            ? 'bg-green-500 text-white'
+                            ? 'bg-green-600 text-white'
                             : isActive
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-neutral-200 text-neutral-500'
+                            ? 'bg-primary-600 text-white ring-2 ring-primary-200'
+                            : 'bg-neutral-100 text-neutral-400'
                         }`}
                       >
                         {isCompleted ? (
@@ -186,30 +335,50 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
                         ) : (
                           <Icon className="h-5 w-5" />
                         )}
+
+                        {/* Numéro de l'étape */}
+                        <div
+                          className={`absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
+                            isCompleted || isActive
+                              ? 'bg-white text-primary-600'
+                              : 'bg-neutral-200 text-neutral-500'
+                          }`}
+                        >
+                          {step.number + 1}
+                        </div>
                       </div>
+
+                      {/* Titre de l'étape */}
                       <span
-                        className={`text-sm font-medium ${
-                          isActive ? 'text-primary-600' : 'text-neutral-600'
+                        className={`mt-2 text-xs font-medium transition-colors ${
+                          isActive
+                            ? 'text-primary-700'
+                            : isCompleted
+                            ? 'text-green-700'
+                            : 'text-neutral-500'
                         }`}
                       >
                         {step.title}
                       </span>
                     </div>
+
+                    {/* Ligne de connexion entre les étapes */}
                     {index < steps.length - 1 && (
-                      <div
-                        className={`mx-4 h-px w-12 ${
-                          isCompleted ? 'bg-green-500' : 'bg-neutral-200'
-                        }`}
-                      />
+                      <div className="hidden md:block relative flex-1 mx-2" style={{ maxWidth: '80px' }}>
+                        <div className="h-0.5 bg-neutral-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-500 ${
+                              isCompleted
+                                ? 'bg-green-600 w-full'
+                                : 'w-0'
+                            }`}
+                          />
+                        </div>
+                      </div>
                     )}
                   </div>
                 )
               })}
-            </div>
-
-            {/* Mobile step indicator */}
-            <div className="md:hidden text-sm font-medium text-neutral-600">
-              Étape {currentStep + 1}/4
             </div>
           </div>
         </div>
@@ -326,10 +495,15 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
                               required
                               value={checkOut}
                               onChange={(e) => setCheckOut(e.target.value)}
-                              min={checkIn || new Date().toISOString().split('T')[0]}
+                              min={checkIn ? new Date(new Date(checkIn).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
                               className="input-custom pl-11"
                             />
                           </div>
+                          {checkIn && (
+                            <p className="text-xs text-neutral-500 mt-1">
+                              La date de départ doit être au moins 1 jour après la date d'arrivée
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -356,21 +530,49 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
                       {/* Afficher le nombre de nuits et le prix */}
                       {checkIn && checkOut && (
                         <div className="bg-primary-50 border border-primary-200 rounded-xl p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-neutral-700">Durée du séjour:</span>
-                            <span className="font-bold text-primary-700">
-                              {calculateNights()} {calculateNights() > 1 ? 'nuits' : 'nuit'}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-neutral-700">Prix estimé:</span>
-                            <span className="font-display text-2xl font-bold text-primary-600">
-                              {chambre.prix * calculateNights()}$
-                            </span>
-                          </div>
-                          <div className="text-xs text-neutral-600 mt-2">
-                            {chambre.prix}$ × {calculateNights()} {calculateNights() > 1 ? 'nuits' : 'nuit'}
-                          </div>
+                          {calculatedPrice ? (
+                            <>
+                              <div className="flex items-center gap-2 mb-3">
+                                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                <span className="text-sm font-semibold text-green-700">
+                                  Disponibilité confirmée
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium text-neutral-700">Durée du séjour:</span>
+                                <span className="font-bold text-primary-700">
+                                  {calculatedPrice.numberOfNights} {calculatedPrice.numberOfNights > 1 ? 'nuits' : 'nuit'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-neutral-700">Prix de la chambre:</span>
+                                <span className="font-display text-2xl font-bold text-primary-600">
+                                  {calculatedPrice.totalPrice}$
+                                </span>
+                              </div>
+                              <div className="text-xs text-neutral-600 mt-2">
+                                Prix calculé par le système de réservation
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium text-neutral-700">Durée du séjour:</span>
+                                <span className="font-bold text-primary-700">
+                                  {calculateNights()} {calculateNights() > 1 ? 'nuits' : 'nuit'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-neutral-700">Prix estimé:</span>
+                                <span className="font-display text-2xl font-bold text-primary-600">
+                                  {chambre.prix * calculateNights()}$
+                                </span>
+                              </div>
+                              <div className="text-xs text-neutral-600 mt-2">
+                                {chambre.prix}$ × {calculateNights()} {calculateNights() > 1 ? 'nuits' : 'nuit'}
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -398,108 +600,43 @@ export default function ReservationPage({ params }: { params: { chambreId: strin
                     <h2 className="font-display text-2xl font-bold text-neutral-900 mb-6">
                       Paiement sécurisé
                     </h2>
-                    <div className="space-y-6">
-                      {/* Informations de paiement */}
-                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-                        <ShieldCheck className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <div className="font-semibold text-blue-900 mb-1">
-                            Paiement 100% sécurisé
-                          </div>
-                          <div className="text-sm text-blue-700">
-                            Vos informations sont cryptées et protégées par Stripe
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Formulaire de paiement (Stripe) */}
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-neutral-700 mb-2">
-                            Numéro de carte
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="1234 5678 9012 3456"
-                            className="input-custom"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-neutral-700 mb-2">
-                              Date d'expiration
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="MM/AA"
-                              className="input-custom"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-neutral-700 mb-2">
-                              CVC
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="123"
-                              className="input-custom"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Conditions */}
-                      <label className="flex items-start gap-3 p-4 rounded-xl bg-neutral-50 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="mt-1 rounded text-primary-600 focus:ring-primary-500"
-                        />
-                        <span className="text-sm text-neutral-700">
-                          J'accepte les{' '}
-                          <a href="/conditions" className="text-primary-600 hover:underline">
-                            conditions générales
-                          </a>{' '}
-                          et la{' '}
-                          <a href="/confidentialite" className="text-primary-600 hover:underline">
-                            politique de confidentialité
-                          </a>
-                        </span>
-                      </label>
-                    </div>
+                    <Elements stripe={stripePromise}>
+                      <StripePaymentForm
+                        amount={total}
+                        onSuccess={handlePaymentSuccess}
+                        onError={handlePaymentError}
+                        loading={paymentProcessing}
+                      />
+                    </Elements>
                   </div>
                 )}
               </motion.div>
 
               {/* Navigation */}
-              <div className="flex items-center justify-between mt-8">
-                <button
-                  onClick={handleBack}
-                  disabled={currentStep === 0}
-                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Retour
-                </button>
+              {currentStep !== 3 && (
+                <div className="flex items-center justify-between mt-8">
+                  <button
+                    onClick={handleBack}
+                    disabled={currentStep === 0}
+                    className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Retour
+                  </button>
 
-                <button
-                  onClick={currentStep === 3 ? handlePaymentConfirmation : handleNext}
-                  disabled={currentStep === 0 && (!checkIn || !checkOut)}
-                  className="btn-primary group disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {currentStep === 3 ? (
-                    <>
-                      <ShieldCheck className="h-5 w-5" />
-                      Confirmer et payer {total.toFixed(2)}$
-                    </>
-                  ) : (
-                    <>
-                      Continuer
-                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
-                </button>
-              </div>
+                  <button
+                    onClick={handleNext}
+                    disabled={
+                      (currentStep === 0 && (!checkIn || !checkOut)) ||
+                      (currentStep === 2 && !clientInfo)
+                    }
+                    className="btn-primary group disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Continuer
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Sidebar - Récapitulatif */}

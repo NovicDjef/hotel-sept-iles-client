@@ -42,7 +42,7 @@ export default function ChambreDetailPage({ params }: { params: { id: string } }
   }, [dispatch, rooms.length])
 
   // Trouver la chambre par ID
-  const chambre = rooms.find(r => r.id === parseInt(params.id))
+  const chambre = rooms.find(r => r.id === params.id)
 
   if (loading || !chambre) {
     return (
@@ -192,7 +192,7 @@ export default function ChambreDetailPage({ params }: { params: { id: string } }
                     <div className="flex items-center gap-1">
                       <Star className="h-5 w-5 text-accent-gold fill-accent-gold" />
                       <span className="font-semibold text-neutral-900">{chambre.note}</span>
-                      <span className="text-sm">({chambre.avisTotal} avis)</span>
+                      <span className="text-sm">({chambre.avis} avis)</span>
                     </div>
                     <span>•</span>
                     <div className="flex items-center gap-1.5">

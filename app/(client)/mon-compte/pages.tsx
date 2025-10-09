@@ -28,7 +28,7 @@ const user = {
   prenom: 'Jean',
   nom: 'Tremblay',
   email: 'jean.tremblay@email.com',
-  telephone: '(418) 555-1234',
+  telephone: '+1 418 962-2581',
   adresse: '123 rue Principale',
   ville: 'Québec',
   codePostal: 'G1A 1A1',

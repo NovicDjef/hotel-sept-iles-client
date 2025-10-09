@@ -46,21 +46,59 @@ export const filterChambres = (params: {
 // ==================== RÉSERVATIONS ====================
 
 /**
- * Crée une nouvelle réservation
+ * ÉTAPE 1 : Calcul du prix et vérification de disponibilité
  */
-export const createReservation = (data: {
-  chambreId: number
-  dateDebut: string
-  dateFin: string
-  nombrePersonnes: number
-  nom: string
-  prenom: string
-  email: string
-  telephone: string
-  adresse?: string
-  demandesSpeciales?: string
+export const calculateReservationPrice = (data: {
+  roomId: string
+  checkInDate: string
+  checkOutDate: string
+  numberOfGuests: number
+  hotelId?: string
 }) => {
-  return apiService.post('/reservations', data)
+  // Ajouter l'hotelId par défaut si non fourni
+  const requestData = {
+    ...data,
+    hotelId: data.hotelId || hotelId
+  }
+  return apiService.post('/api/v1/reservations/calculate', requestData)
+}
+
+/**
+ * ÉTAPE 2 : Création compte client + réservation PENDING
+ */
+export const createGuestReservation = (data: {
+  // Informations chambre et dates
+  roomId: string
+  checkInDate: string
+  checkOutDate: string
+  numberOfGuests: number
+
+  // Informations client
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  address?: string
+
+  // Options
+  specialRequests?: string
+  hotelId?: string
+}) => {
+  // Ajouter l'hotelId par défaut si non fourni
+  const requestData = {
+    ...data,
+    hotelId: data.hotelId || hotelId
+  }
+  return apiService.post('/api/v1/reservations/guest', requestData)
+}
+
+/**
+ * ÉTAPE 3 : Confirmation du paiement Stripe
+ */
+export const confirmReservationPayment = (reservationId: string, data: {
+  paymentMethodId: string
+}) => {
+  return apiService.post(`/api/v1/reservations/${reservationId}/confirm-payment`, data)
 }
 
 /**
@@ -153,6 +191,33 @@ export const register = (data: {
   telephone?: string
 }) => {
   return apiService.post('/auth/register', data)
+}
+
+/**
+ * Enregistrement d'un invité (guest) lors de la réservation
+ */
+export const registerGuest = (data: {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  address?: string
+}) => {
+  return apiService.post('/api/v1/auth/guest/register', data)
+}
+
+/**
+ * Demande un code OTP pour connexion sans mot de passe
+ */
+export const requestGuestOTP = (data: { email: string }) => {
+  return apiService.post('/api/v1/auth/guest/request-otp', data)
+}
+
+/**
+ * Vérifie le code OTP et connecte l'utilisateur
+ */
+export const verifyGuestOTP = (data: { email: string; otp: string }) => {
+  return apiService.post('/api/v1/auth/guest/verify-otp', data)
 }
 
 /**

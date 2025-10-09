@@ -164,18 +164,26 @@ export function Footer() {
               <li className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-white/70 mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-white/70">
-                  123 rue Principale<br />
-                  Sept-Îles, QC G4R 1A1
+                  451, avenue Arnaud<br />
+                  Sept-Îles, Québec G4R 3B3
                 </span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-white/70 flex-shrink-0" />
-                <a
-                  href="tel:+14185551234"
-                  className="text-sm text-white/70 hover:text-white transition-colors"
-                >
-                  (418) 555-1234
-                </a>
+                <div className="flex flex-col gap-1">
+                  <a
+                    href="tel:+14189622581"
+                    className="text-sm text-white/70 hover:text-white transition-colors"
+                  >
+                    418 962-2581
+                  </a>
+                  <a
+                    href="tel:+18004631753"
+                    className="text-xs text-white/60 hover:text-white transition-colors"
+                  >
+                    Sans frais : 1 800 463-1753
+                  </a>
+                </div>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-white/70 flex-shrink-0" />

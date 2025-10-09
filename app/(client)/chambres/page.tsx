@@ -45,7 +45,21 @@ export default function ChambresPage() {
   return (
     <div className="min-h-screen pt-20">
       {/* Hero Section */}
-      <section className="relative py-16 lg:py-20 bg-gradient-luxury text-white overflow-hidden">
+      <section className="relative py-16 lg:py-20 text-white overflow-hidden">
+        {/* Image de fond */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/hotel/hotel.jpg"
+            alt="Hôtel Sept-Îles"
+            fill
+            className="object-cover"
+            priority
+          />
+          {/* Overlay sombre pour la lisibilité du texte */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
+        </div>
+
+        {/* Effets décoratifs par-dessus l'overlay */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent-gold rounded-full blur-3xl" />

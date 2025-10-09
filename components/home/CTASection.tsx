@@ -85,7 +85,7 @@ export function CTASection() {
                 className="inline-flex items-center justify-center gap-3 rounded-xl bg-white/10 backdrop-blur-md border-2 border-white/20 px-8 py-4 text-base font-semibold text-white transition-all duration-300 hover:bg-white/20 hover:border-white/30 active:scale-95"
               >
                 <Phone className="h-5 w-5" />
-                (418) 555-1234
+                +1 418 962-2581
               </a>
             </div>
 
@@ -138,7 +138,7 @@ export function CTASection() {
                 </div>
                 <div>
                   <div className="text-sm text-neutral-600 mb-1">Appelez-nous</div>
-                  <div className="font-semibold text-neutral-900">(418) 555-1234</div>
+                  <div className="font-semibold text-neutral-900">+1 418 962-2581</div>
                 </div>
               </a>
 

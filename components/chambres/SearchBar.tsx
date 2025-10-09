@@ -3,12 +3,15 @@
 import { useState } from 'react'
 import { Calendar, Users, Search } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useAppDispatch } from '@/store/hooks'
+import { setCapacity } from '@/store/slices/roomsSlice'
 
 interface SearchBarProps {
   onSearch?: (filters: { checkIn: string; checkOut: string; guests: number }) => void
 }
 
 export function SearchBar({ onSearch }: SearchBarProps) {
+  const dispatch = useAppDispatch()
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
   const [guests, setGuests] = useState(2)
@@ -22,6 +25,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
   // Déclencher la recherche automatiquement quand les valeurs changent
   const handleGuestsChange = (value: number) => {
     setGuests(value)
+    dispatch(setCapacity(value))
     if (onSearch) {
       onSearch({ checkIn, checkOut: checkOut, guests: value })
     }

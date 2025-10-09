@@ -26,7 +26,7 @@ export interface ApiRoom {
 
 // UI Type (used throughout the application)
 export interface Room {
-  id: number
+  id: string
   nom: string
   categorie: 'Premium' | 'Standard' | 'Famille' | 'Business'
   description: string
@@ -72,7 +72,7 @@ export function transformApiRoomToRoom(apiRoom: ApiRoom): Room {
     : (categoryMap[apiRoom.type.toUpperCase()] || 'Standard')
 
   return {
-    id: parseInt(apiRoom.id.replace(/\D/g, '').slice(0, 10)) || Math.floor(Math.random() * 100000),
+    id: apiRoom.id, // Garder l'ID original de l'API
     nom,
     categorie,
     description: apiRoom.description || 'Chambre confortable et bien équipée',

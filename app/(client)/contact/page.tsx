@@ -74,7 +74,7 @@ export default function ContactPage() {
               {
                 icon: Phone,
                 title: 'Téléphone',
-                content: '(418) 555-1234\nSans frais: 1-800-555-1234',
+                content: '+1 418 962-2581\nSans frais: 1-800-555-1234',
                 link: 'tel:+14185551234',
                 linkText: 'Appeler maintenant'
               },
@@ -205,7 +205,7 @@ export default function ContactPage() {
                           value={formData.telephone}
                           onChange={handleChange}
                           className="input-custom pl-10"
-                          placeholder="(418) 555-1234"
+                          placeholder="+1 418 962-2581"
                         />
                       </div>
                     </div>
@@ -259,7 +259,7 @@ export default function ContactPage() {
                   <p className="text-sm text-blue-700">
                     💡 Pour une réponse plus rapide, vous pouvez aussi nous appeler directement au{' '}
                     <a href="tel:+14185551234" className="font-semibold underline">
-                      (418) 555-1234
+                      +1 418 962-2581
                     </a>
                   </p>
                 </div>

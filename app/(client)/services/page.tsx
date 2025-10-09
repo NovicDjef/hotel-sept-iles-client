@@ -18,13 +18,13 @@ import {
 
 const services = [
   {
-    id: 'massage',
+    id: 'massage-therapeutique',
     nom: 'Massage Thérapeutique',
     description: 'Libérez vos tensions avec nos massages personnalisés aux huiles essentielles biologiques.',
-    descriptionLongue: 'Nos massothérapeutes certifiés utilisent des techniques variées (suédois, deep tissue, pierres chaudes) pour soulager vos tensions musculaires et favoriser une relaxation profonde. Chaque séance est adaptée à vos besoins spécifiques.',
-    duree: [60, 90, 120],
-    prix: { 60: 85, 90: 120, 120: 150 },
-    image: '/images/services/massage.svg',
+    descriptionLongue: 'Nos massothérapeutes certifiés utilisent des techniques variées pour soulager vos tensions musculaires et favoriser une relaxation profonde. Chaque séance est adaptée à vos besoins spécifiques.',
+    duree: [50, 80],
+    prix: { 50: 75, 80: 110 },
+    image: '/images/spa/1.jpg',
     categorie: 'Massage',
     bienfaits: [
       'Réduit le stress et l\'anxiété',
@@ -40,13 +40,101 @@ const services = [
     ]
   },
   {
+    id: 'massage-decouverte',
+    nom: 'Massage Découverte',
+    description: 'Découvrez les bienfaits du massage avec notre séance d\'introduction relaxante.',
+    descriptionLongue: 'Parfait pour les débutants, ce massage combine plusieurs techniques douces pour vous initier aux bienfaits de la massothérapie dans une ambiance apaisante.',
+    duree: [50, 80],
+    prix: { 50: 70, 80: 100 },
+    image: '/images/spa/acceuil.jpeg',
+    categorie: 'Massage',
+    bienfaits: [
+      'Relaxation profonde',
+      'Découverte des techniques',
+      'Soulagement des tensions légères',
+      'Moment de détente unique'
+    ],
+    inclus: [
+      'Introduction aux techniques',
+      'Huiles aromatiques',
+      'Ambiance zen',
+      'Conseils personnalisés'
+    ]
+  },
+  {
+    id: 'massage-dos-nuque',
+    nom: 'Massage Dos & Nuque',
+    description: 'Ciblé sur les zones de tension, idéal pour soulager le stress du quotidien.',
+    descriptionLongue: 'Ce massage concentré sur le dos, les épaules et la nuque est parfait pour ceux qui passent de longues heures assis ou devant un écran. Soulagement immédiat garanti.',
+    duree: [50, 80],
+    prix: { 50: 65, 80: 95 },
+    image: '/images/spa/massage-femme.jpeg',
+    categorie: 'Massage',
+    bienfaits: [
+      'Soulage les douleurs cervicales',
+      'Réduit les tensions des épaules',
+      'Améliore la posture',
+      'Détente immédiate'
+    ],
+    inclus: [
+      'Focus zones tendues',
+      'Techniques spécifiques',
+      'Huiles chauffantes',
+      'Conseils posturaux'
+    ]
+  },
+  {
+    id: 'massage-deep-tissue',
+    nom: 'Massage Deep Tissue',
+    description: 'Massage en profondeur pour éliminer les tensions musculaires chroniques.',
+    descriptionLongue: 'Technique de massage profond qui cible les couches musculaires les plus profondes pour soulager les douleurs chroniques et les nœuds musculaires tenaces.',
+    duree: [50, 80],
+    prix: { 50: 85, 80: 120 },
+    image: '/images/spa/relaxa.jpg',
+    categorie: 'Massage',
+    bienfaits: [
+      'Élimine les tensions profondes',
+      'Soulage les douleurs chroniques',
+      'Améliore la flexibilité',
+      'Récupération musculaire'
+    ],
+    inclus: [
+      'Techniques en profondeur',
+      'Baume musculaire',
+      'Étirements adaptés',
+      'Suivi personnalisé'
+    ]
+  },
+  {
+    id: 'massage-femme-enceinte',
+    nom: 'Massage Femme Enceinte',
+    description: 'Massage prénatal doux et sécuritaire pour futures mamans (après 12 semaines).',
+    descriptionLongue: 'Spécialement conçu pour les femmes enceintes, ce massage adapté soulage les maux de dos, réduit le stress et favorise la détente en toute sécurité pour vous et votre bébé.',
+    duree: [50, 80],
+    prix: { 50: 80, 80: 115 },
+    image: '/images/spa/massage-femme-enceinte-dijon.png',
+    categorie: 'Massage',
+    bienfaits: [
+      'Soulage les maux de grossesse',
+      'Réduit les œdèmes',
+      'Favorise la détente',
+      'Améliore le sommeil'
+    ],
+    inclus: [
+      'Position adaptée confortable',
+      'Huiles sécuritaires',
+      'Techniques douces',
+      'Moment privilégié'
+    ]
+  },
+  {
     id: 'hammam',
     nom: 'Hammam Premium',
     description: 'Expérience orientale authentique dans notre hammam traditionnel avec gommage au savon noir.',
     descriptionLongue: 'Plongez dans la tradition du hammam oriental. La chaleur humide ouvre les pores, le gommage au savon noir élimine les cellules mortes et le rinçage à l\'eau de rose complète ce rituel millénaire.',
     duree: [45, 60],
     prix: { 45: 65, 60: 85 },
-    image: '/images/services/hammam.svg',
+    image: '/images/spa/therma.jpg',
     categorie: 'Spa',
     bienfaits: [
       'Détoxifie en profondeur',
@@ -112,7 +200,7 @@ const services = [
     descriptionLongue: 'Le sauna finlandais traditionnel utilise la chaleur sèche pour éliminer les toxines, détendre les muscles et renforcer le système immunitaire. Complété par une douche froide revigorante.',
     duree: [30, 45],
     prix: { 30: 35, 45: 50 },
-    image: '/images/services/sauna.svg',
+    image: '/images/spa/sona.jpg',
     categorie: 'Spa',
     bienfaits: [
       'Détoxification profonde',
@@ -154,25 +242,45 @@ const services = [
 const forfaits = [
   {
     nom: 'Forfait Détente',
-    description: 'Massage 60min + Hammam',
-    prix: 130,
-    economie: 20,
-    services: ['massage', 'hammam']
+    description: 'Massage 50min + Hammam',
+    prixIndividuel: 130,
+    prixDuo: 240,
+    economieIndividuel: 20,
+    economieDuo: 40,
+    services: ['massage-therapeutique', 'hammam']
   },
   {
-    nom: 'Forfait Beauté',
+    nom: 'Forfait Renaissance',
     description: 'Soin visage + Manucure + Pédicure',
-    prix: 150,
-    economie: 25,
+    prixIndividuel: 150,
+    prixDuo: 280,
+    economieIndividuel: 25,
+    economieDuo: 50,
     services: ['facial', 'manucure', 'pedicure']
   },
   {
     nom: 'Forfait Complet',
     description: 'Tous les services (journée spa)',
-    prix: 299,
-    economie: 80,
-    services: ['massage', 'hammam', 'pedicure', 'manucure', 'sauna', 'facial']
+    prixIndividuel: 299,
+    prixDuo: 550,
+    economieIndividuel: 80,
+    economieDuo: 160,
+    services: ['massage-therapeutique', 'hammam', 'pedicure', 'manucure', 'sauna', 'facial']
   }
+]
+
+const certificatsCadeaux = [
+  { montant: 25, populaire: false },
+  { montant: 50, populaire: true },
+  { montant: 100, populaire: true },
+  { montant: 150, populaire: false },
+  { montant: 200, populaire: true },
+  { montant: 250, populaire: false },
+  { montant: 300, populaire: false },
+  { montant: 350, populaire: false },
+  { montant: 400, populaire: false },
+  { montant: 450, populaire: false },
+  { montant: 500, populaire: true },
 ]
 
 export default function ServicesPage() {
@@ -188,7 +296,21 @@ export default function ServicesPage() {
   return (
     <div className="min-h-screen pt-16 bg-neutral-50">
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-28 bg-gradient-luxury text-white overflow-hidden">
+      <section className="relative py-20 lg:py-28 text-white overflow-hidden">
+        {/* Image de fond */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/spa/acceuil.jpeg"
+            alt="Spa Sept-Îles"
+            fill
+            className="object-cover"
+            priority
+          />
+          {/* Overlay sombre pour la lisibilité du texte */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40" />
+        </div>
+
+        {/* Effets décoratifs par-dessus l'overlay */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 right-0 w-96 h-96 bg-accent-gold rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl" />
@@ -440,6 +562,92 @@ export default function ServicesPage() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Certificats Cadeaux */}
+      <section className="py-16 bg-neutral-50">
+        <div className="container-custom">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <span className="badge-primary mb-4">
+              <Gift className="h-4 w-4 inline mr-2" />
+              Certificats Cadeaux
+            </span>
+            <h2 className="font-display text-3xl lg:text-4xl font-bold text-neutral-900 mb-4">
+              Offrez un moment de détente
+            </h2>
+            <p className="text-neutral-600 max-w-2xl mx-auto">
+              Faites plaisir à vos proches avec nos certificats cadeaux spa. Le cadeau parfait pour toutes les occasions.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            {certificatsCadeaux.map((certificat, index) => (
+              <motion.div
+                key={certificat.montant}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ scale: 1.05, y: -5 }}
+                className={`relative group cursor-pointer ${
+                  certificat.populaire ? 'ring-2 ring-accent-gold' : ''
+                }`}
+              >
+                <div className="card-premium p-6 text-center h-full flex flex-col justify-between">
+                  {certificat.populaire && (
+                    <div className="absolute -top-2 -right-2 bg-accent-gold text-neutral-900 text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                      Populaire
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-gold mb-3 group-hover:scale-110 transition-transform">
+                      <Gift className="h-6 w-6 text-neutral-900" />
+                    </div>
+
+                    <div className="font-display text-3xl font-bold text-primary-600 mb-1">
+                      {certificat.montant}$
+                    </div>
+                    <p className="text-xs text-neutral-600">Valeur</p>
+                  </div>
+
+                  <button className="btn-primary-sm w-full justify-center text-xs group-hover:shadow-lg transition-all">
+                    <Gift className="h-3 w-3" />
+                    Acheter
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="mt-8 text-center"
+          >
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 max-w-3xl mx-auto">
+              <h3 className="font-semibold text-lg text-blue-900 mb-2">
+                Certificats personnalisés disponibles
+              </h3>
+              <p className="text-sm text-blue-700 mb-4">
+                Besoin d'un montant différent ? Contactez-nous pour créer un certificat cadeau sur mesure.
+              </p>
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                Nous contacter
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 

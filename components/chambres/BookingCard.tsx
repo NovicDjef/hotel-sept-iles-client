@@ -7,9 +7,9 @@ import { Calendar, Users, ArrowRight, Sparkles, Shield, Tag } from 'lucide-react
 
 interface BookingCardProps {
   chambre: {
-    id: string
+    id: string | number
     nom: string
-    prixBase: number
+    prix: number
     disponible: boolean
   }
 }
@@ -28,8 +28,10 @@ export function BookingCard({ chambre }: BookingCardProps) {
   }
 
   const nights = calculateNights()
-  const subtotal = nights * chambre.prixBase
-  const taxes = subtotal * 0.15
+  const subtotal = nights * chambre.prix
+  const tps = subtotal * 0.05      // TPS : 5%
+  const tvq = subtotal * 0.09975   // TVQ : 9,975%
+  const taxes = tps + tvq
   const total = subtotal + taxes
 
   return (
@@ -41,7 +43,7 @@ export function BookingCard({ chambre }: BookingCardProps) {
     >
       <div className="flex items-baseline gap-2 mb-6">
         <span className="font-display text-4xl font-bold text-primary-600">
-          {chambre.prixBase}$
+          {chambre.prix}$
         </span>
         <span className="text-neutral-600">/ nuit</span>
       </div>
@@ -117,14 +119,19 @@ export function BookingCard({ chambre }: BookingCardProps) {
         >
           <div className="flex items-center justify-between text-sm">
             <span className="text-neutral-600">
-              {chambre.prixBase}$ × {nights} {nights > 1 ? 'nuits' : 'nuit'}
+              {chambre.prix}$ × {nights} {nights > 1 ? 'nuits' : 'nuit'}
             </span>
-            <span className="font-semibold text-neutral-900">{subtotal}$</span>
+            <span className="font-semibold text-neutral-900">{subtotal.toFixed(2)}$</span>
           </div>
 
           <div className="flex items-center justify-between text-sm">
-            <span className="text-neutral-600">Taxes et frais</span>
-            <span className="font-semibold text-neutral-900">{taxes.toFixed(2)}$</span>
+            <span className="text-neutral-600">T.P.S (5%)</span>
+            <span className="font-semibold text-neutral-900">{tps.toFixed(2)}$</span>
+          </div>
+
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-neutral-600">T.V.Q (9,975%)</span>
+            <span className="font-semibold text-neutral-900">{tvq.toFixed(2)}$</span>
           </div>
 
           <div className="h-px bg-neutral-200" />

@@ -1,16 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Wifi, Coffee, Bath, Tv, Wind, Star, Sparkles } from 'lucide-react'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { setPriceRange, resetFilters } from '@/store/slices/roomsSlice'
 
 interface FilterSidebarProps {
   onClose?: () => void
 }
 
 export function FilterSidebar({ onClose }: FilterSidebarProps) {
-  const [priceRange, setPriceRange] = useState([100, 400])
+  const dispatch = useAppDispatch()
+  const filters = useAppSelector((state) => state.rooms.filters)
+
+  const [localMinPrice, setLocalMinPrice] = useState(filters.minPrice)
+  const [localMaxPrice, setLocalMaxPrice] = useState(filters.maxPrice)
   const [selectedEquipements, setSelectedEquipements] = useState<string[]>([])
+
+  // Sync local state with Redux store
+  useEffect(() => {
+    setLocalMinPrice(filters.minPrice)
+    setLocalMaxPrice(filters.maxPrice)
+  }, [filters.minPrice, filters.maxPrice])
 
   const equipements = [
     { id: 'wifi', label: 'Wi-Fi gratuit', icon: Wifi },
@@ -29,9 +41,24 @@ export function FilterSidebar({ onClose }: FilterSidebarProps) {
     )
   }
 
-  const resetFilters = () => {
-    setPriceRange([100, 400])
+  const handleResetFilters = () => {
+    dispatch(resetFilters())
     setSelectedEquipements([])
+  }
+
+  const handleApplyFilters = () => {
+    dispatch(setPriceRange({ min: localMinPrice, max: localMaxPrice }))
+    if (onClose) {
+      onClose()
+    }
+  }
+
+  const handleMinPriceChange = (value: number) => {
+    setLocalMinPrice(value)
+  }
+
+  const handleMaxPriceChange = (value: number) => {
+    setLocalMaxPrice(value)
   }
 
   const content = (
@@ -53,36 +80,36 @@ export function FilterSidebar({ onClose }: FilterSidebarProps) {
         <div className="space-y-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-neutral-600">Min</span>
-            <span className="font-semibold text-neutral-900">{priceRange[0]}$</span>
+            <span className="font-semibold text-neutral-900">{localMinPrice}$</span>
           </div>
           <input
             type="range"
-            min="50"
+            min="0"
             max="500"
             step="10"
-            value={priceRange[0]}
-            onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+            value={localMinPrice}
+            onChange={(e) => handleMinPriceChange(Number(e.target.value))}
             className="w-full accent-primary-600"
           />
-          
+
           <div className="flex items-center justify-between text-sm">
             <span className="text-neutral-600">Max</span>
-            <span className="font-semibold text-neutral-900">{priceRange[1]}$</span>
+            <span className="font-semibold text-neutral-900">{localMaxPrice}$</span>
           </div>
           <input
             type="range"
-            min="50"
+            min="0"
             max="500"
             step="10"
-            value={priceRange[1]}
-            onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+            value={localMaxPrice}
+            onChange={(e) => handleMaxPriceChange(Number(e.target.value))}
             className="w-full accent-primary-600"
           />
 
           <div className="flex items-center justify-between p-3 bg-primary-50 rounded-xl">
             <span className="text-sm text-neutral-700">Par nuit</span>
             <span className="font-semibold text-primary-600">
-              {priceRange[0]}$ - {priceRange[1]}$
+              {localMinPrice}$ - {localMaxPrice}$
             </span>
           </div>
         </div>
@@ -170,10 +197,10 @@ export function FilterSidebar({ onClose }: FilterSidebarProps) {
       </div>
 
       <div className="pt-4 space-y-3 border-t border-neutral-200">
-        <button onClick={resetFilters} className="btn-secondary w-full justify-center">
+        <button onClick={handleResetFilters} className="btn-secondary w-full justify-center">
           Réinitialiser
         </button>
-        <button className="btn-primary w-full justify-center">
+        <button onClick={handleApplyFilters} className="btn-primary w-full justify-center">
           Appliquer les filtres
         </button>
       </div>
