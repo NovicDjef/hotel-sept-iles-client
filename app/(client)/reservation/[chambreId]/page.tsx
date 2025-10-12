@@ -95,13 +95,13 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
 
   // Utiliser les données calculées par le backend si disponibles, sinon calculer côté client
   const nights = calculatedPrice?.numberOfNights || calculateNights()
-  const chambrePrix = calculatedPrice?.totalPrice || (nights * chambre.prix)
+
+  // Prix de la chambre du backend (avec taxes incluses)
+  const chambrePrixTotal = calculatedPrice?.totalPrice || (nights * chambre.prix)
+
+  // Pour l'affichage, on va juste ajouter les services
   const servicesPrix = selectedServices.reduce((sum, s) => sum + s.prix, 0)
-  const subtotal = chambrePrix + servicesPrix
-  const tps = subtotal * 0.05      // TPS : 5%
-  const tvq = subtotal * 0.09975   // TVQ : 9,975%
-  const taxes = tps + tvq
-  const total = subtotal + taxes
+  const total = chambrePrixTotal + servicesPrix
 
   const steps = [
     { number: 0, title: 'Dates', icon: Calendar },
@@ -647,9 +647,10 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
                   nights={nights}
                   selectedServices={selectedServices}
                   total={total}
-                  subtotal={subtotal}
-                  tps={tps}
-                  tvq={tvq}
+                  subtotal={0}
+                  tps={0}
+                  tvq={0}
+                  chambrePrix={chambrePrixTotal}
                 />
               </div>
             </div>

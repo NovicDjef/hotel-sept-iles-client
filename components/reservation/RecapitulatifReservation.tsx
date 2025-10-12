@@ -12,6 +12,7 @@ interface RecapitulatifReservationProps {
   subtotal: number
   tps: number
   tvq: number
+  chambrePrix?: number // Prix calculé par le backend
 }
 
 export function RecapitulatifReservation({
@@ -21,9 +22,18 @@ export function RecapitulatifReservation({
   total,
   subtotal,
   tps,
-  tvq
+  tvq,
+  chambrePrix: backendChambrePrixTotal
 }: RecapitulatifReservationProps) {
-  const chambrePrix = nights * chambre.prix
+  // Le prix du backend inclut les taxes
+  const chambrePrixTotal = backendChambrePrixTotal || (nights * chambre.prix)
+
+  // Calculer le prix de base (sans taxes) pour la simulation
+  const prixParNuit = chambre.prix
+  const totalBase = prixParNuit * nights
+  const taxesTPS = totalBase * 0.05
+  const taxesTVQ = totalBase * 0.09975
+
   const servicesPrix = selectedServices.reduce((sum, s) => sum + s.prix, 0)
 
   return (
@@ -37,20 +47,43 @@ export function RecapitulatifReservation({
       </h3>
 
       {/* Chambre */}
-      <div className="flex gap-3 mb-6 pb-6 border-b border-neutral-200">
-        <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-          <Image
-            src={chambre.image}
-            alt={chambre.nom}
-            fill
-            className="object-cover"
-          />
+      <div className="mb-6 pb-6 border-b border-neutral-200">
+        <div className="flex gap-3 mb-3">
+          <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+            <Image
+              src={chambre.image}
+              alt={chambre.nom}
+              fill
+              className="object-cover"
+            />
+          </div>
+          <div className="flex-1">
+            <div className="font-semibold text-neutral-900">{chambre.nom}</div>
+            <div className="text-sm text-neutral-600">{nights} nuit{nights > 1 ? 's' : ''}</div>
+          </div>
         </div>
-        <div>
-          <div className="font-semibold text-neutral-900">{chambre.nom}</div>
-          <div className="text-sm text-neutral-600">{nights} nuit{nights > 1 ? 's' : ''}</div>
-          <div className="text-sm font-semibold text-primary-600 mt-1">
-            {chambrePrix}$
+        {/* Détail du calcul avec simulation des taxes */}
+        <div className="bg-neutral-50 rounded-lg p-3 space-y-1.5">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-neutral-600">Prix par nuit</span>
+            <span className="font-medium text-neutral-900">{prixParNuit.toFixed(2)}$</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-neutral-600">Nombre de nuits</span>
+            <span className="font-medium text-neutral-900">× {nights}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-neutral-600">T.P.S (5%)</span>
+            <span className="font-medium text-neutral-900">{taxesTPS.toFixed(2)}$</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-neutral-600">T.V.Q (9,975%)</span>
+            <span className="font-medium text-neutral-900">{taxesTVQ.toFixed(2)}$</span>
+          </div>
+          <div className="h-px bg-neutral-200 my-1" />
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-neutral-700">Total chambre</span>
+            <span className="font-semibold text-primary-600">{chambrePrixTotal.toFixed(2)}$</span>
           </div>
         </div>
       </div>
@@ -73,21 +106,15 @@ export function RecapitulatifReservation({
         </div>
       )}
 
-      {/* Détails prix */}
-      <div className="space-y-3 mb-6">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-neutral-600">Sous-total</span>
-          <span className="font-semibold text-neutral-900">{subtotal.toFixed(2)}$</span>
+      {/* Services ajoutés au total chambre */}
+      {servicesPrix > 0 && (
+        <div className="space-y-2 mb-6 pb-6 border-b border-neutral-200">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-neutral-600">Total services</span>
+            <span className="font-semibold text-neutral-900">{servicesPrix.toFixed(2)}$</span>
+          </div>
         </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-neutral-600">T.P.S (5%)</span>
-          <span className="font-semibold text-neutral-900">{tps.toFixed(2)}$</span>
-        </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-neutral-600">T.V.Q (9,975%)</span>
-          <span className="font-semibold text-neutral-900">{tvq.toFixed(2)}$</span>
-        </div>
-      </div>
+      )}
 
       {/* Total */}
       <div className="pt-4 border-t-2 border-primary-100">
