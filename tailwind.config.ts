@@ -1,15 +1,9 @@
+// Tailwind CSS v4 - La configuration se fait maintenant dans app/globals.css avec @theme
+// Ce fichier est conservé pour la compatibilité mais n'est plus nécessaire
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
-  content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
+  content: [],
 }
 
 export default config

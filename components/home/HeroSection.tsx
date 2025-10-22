@@ -10,7 +10,7 @@ export function HeroSection() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
 
   return (
-    <section className="relative h-[70vh] lg:h-[80vh] flex items-center justify-center overflow-hidden">
+    <section className="relative h-[100vh] lg:h-[100vh] flex items-center justify-center overflow-hidden">
       {/* Background avec parallax effect */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -56,7 +56,7 @@ export function HeroSection() {
       <div className="container-custom relative z-10 pt-20 pb-16">
         <div className="max-w-3xl">
           {/* Badge animé */}
-          <motion.div
+          {/* <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -69,7 +69,7 @@ export function HeroSection() {
             <span className="text-white text-sm font-medium">
               Réservez maintenant et économisez 20%
             </span>
-          </motion.div>
+          </motion.div> */}
 
           {/* Titre principal */}
           <motion.h1

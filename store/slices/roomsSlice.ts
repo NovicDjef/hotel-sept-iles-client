@@ -41,7 +41,7 @@ export const fetchRooms = createAsyncThunk(
 
       // L'API retourne { success, message, data, meta }
       // Extraire le tableau de chambres depuis data
-      const apiRooms = response.data.data || response.data
+      const apiRooms = (response.data as any).data || response.data
       console.log('Chambres API récupérées:', apiRooms)
 
       // Transform API data to UI format
@@ -118,8 +118,8 @@ const roomsSlice = createSlice({
     },
 
     // Mettre à jour la disponibilité d'une chambre
-    updateRoomAvailability: (state, action: PayloadAction<{ roomId: number; available: boolean }>) => {
-      const room = state.rooms.find(r => r.id === action.payload.roomId)
+    updateRoomAvailability: (state, action: PayloadAction<{ roomId: string | number; available: boolean }>) => {
+      const room = state.rooms.find(r => r.id === action.payload.roomId.toString())
       if (room) {
         room.disponible = action.payload.available
       }
@@ -144,7 +144,7 @@ const roomsSlice = createSlice({
 
     // checkRoomAvailability
     builder.addCase(checkRoomAvailability.fulfilled, (state, action) => {
-      const room = state.rooms.find(r => r.id === action.payload.roomId)
+      const room = state.rooms.find(r => r.id === action.payload.roomId.toString())
       if (room) {
         room.disponible = action.payload.available
       }

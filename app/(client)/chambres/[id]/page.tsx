@@ -28,12 +28,18 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchRooms } from '@/store/slices/roomsSlice'
 import { Room } from '@/types/room'
 
-export default function ChambreDetailPage({ params }: { params: { id: string } }) {
+export default function ChambreDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [roomId, setRoomId] = useState<string | null>(null)
 
   const dispatch = useAppDispatch()
   const { rooms, loading } = useAppSelector((state) => state.rooms)
+
+  // Unwrap params Promise
+  useEffect(() => {
+    params.then((p) => setRoomId(p.id))
+  }, [params])
 
   useEffect(() => {
     if (rooms.length === 0) {
@@ -42,7 +48,7 @@ export default function ChambreDetailPage({ params }: { params: { id: string } }
   }, [dispatch, rooms.length])
 
   // Trouver la chambre par ID
-  const chambre = rooms.find(r => r.id === params.id)
+  const chambre = roomId ? rooms.find(r => r.id === roomId) : null
 
   if (loading || !chambre) {
     return (

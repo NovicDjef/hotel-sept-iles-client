@@ -101,7 +101,10 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
 
   // Pour l'affichage, on va juste ajouter les services
   const servicesPrix = selectedServices.reduce((sum, s) => sum + s.prix, 0)
-  const total = chambrePrixTotal + servicesPrix
+  const subtotal = chambrePrixTotal + servicesPrix
+  const tps = subtotal * 0.05  // TPS 5%
+  const tvq = subtotal * 0.09975  // TVQ 9.975%
+  const total = subtotal + tps + tvq
 
   const steps = [
     { number: 0, title: 'Dates', icon: Calendar },

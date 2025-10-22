@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server'
 import { rooms } from '@/data/rooms'
 
-// GET /api/chambres - Récupérer toutes les chambres
+// GET /api/chambres - RÃ©cupÃ©rer toutes les chambres
 export async function GET() {
   try {
-    // Simuler un délai réseau
+    // Simuler un dÃ©lai rÃ©seau
     await new Promise(resolve => setTimeout(resolve, 500))
 
     // Retourner les chambres
     return NextResponse.json(rooms)
   } catch (error) {
     return NextResponse.json(
-      { error: 'Erreur lors de la récupération des chambres' },
+      { error: 'Erreur lors de la rÃ©cupÃ©ration des chambres' },
       { status: 500 }
     )
   }

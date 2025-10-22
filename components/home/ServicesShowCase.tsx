@@ -12,7 +12,7 @@ const services = [
     description: 'Détente profonde avec nos massothérapeutes certifiés',
     duration: '60-90 min',
     price: 'À partir de 85$',
-    image: '/images/services/massage.jpg',
+    image: '/images/spa/massage.jpg',
     color: 'from-purple-500 to-pink-500'
   },
   {
@@ -21,7 +21,7 @@ const services = [
     description: 'Expérience orientale authentique dans notre hammam',
     duration: '45 min',
     price: 'À partir de 65$',
-    image: '/images/services/hammam.jpg',
+    image: './images/spa/Hammam.jpg',
     color: 'from-blue-500 to-cyan-500'
   },
   {
@@ -30,26 +30,8 @@ const services = [
     description: 'Soin complet pour des pieds parfaits',
     duration: '60 min',
     price: 'À partir de 55$',
-    image: '/images/services/pedicure.jpg',
+    image: '/images/spa/pedicure.jpg',
     color: 'from-pink-500 to-rose-500'
-  },
-  {
-    id: 'manucure',
-    name: 'Manucure Luxe',
-    description: 'Des mains soignées avec des produits premium',
-    duration: '45 min',
-    price: 'À partir de 45$',
-    image: '/images/services/manucure.jpg',
-    color: 'from-amber-500 to-orange-500'
-  },
-  {
-    id: 'sauna',
-    name: 'Sauna & Détente',
-    description: 'Purifiez votre corps dans notre sauna finlandais',
-    duration: '30 min',
-    price: 'À partir de 35$',
-    image: '/images/services/sauna.jpg',
-    color: 'from-red-500 to-orange-500'
   },
   {
     id: 'facial',
@@ -57,8 +39,17 @@ const services = [
     description: 'Rayonnez avec nos soins faciaux sur mesure',
     duration: '60 min',
     price: 'À partir de 75$',
-    image: '/images/services/facial.jpg',
+    image: '/images/spa/soin-visage.png',
     color: 'from-green-500 to-emerald-500'
+  },
+  {
+    id: 'sauna',
+    name: 'Sauna & Détente',
+    description: 'Purifiez votre corps dans notre sauna finlandais',
+    duration: '30 min',
+    price: 'À partir de 35$',
+    image: '/images/spa/sona.jpg',
+    color: 'from-red-500 to-orange-500'
   }
 ]
 
@@ -113,7 +104,7 @@ export function ServicesShowcase() {
                     src={service.image}
                     alt={service.name}
                     fill
-                    className="object-cover opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-700"
+                    //className="object-cover opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-700"
                   />
                   <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-40 group-hover:opacity-50 transition-opacity duration-500`} />
                 </div>
@@ -123,9 +114,9 @@ export function ServicesShowcase() {
                   {/* Badge prix */}
                   <div className="absolute top-6 right-6">
                     <div className="bg-white/90 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-md">
-                      <div className="text-xs font-semibold text-neutral-900">
+                      {/* <div className="text-xs font-semibold text-neutral-900">
                         {service.price}
-                      </div>
+                      </div> */}
                     </div>
                   </div>
 

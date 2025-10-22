@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { HeroSection } from '@/components/home/HeroSection'
 import { FeaturedRooms } from '@/components/home/FeaturedRooms'
-import { ServicesShowcase } from '@/components/home/ServicesShowcase'
+import { ServicesShowcase } from '@/components/home/ServicesShowCase'
 import { TestimonialsSection } from '@/components/home/TestimonialsSection'
 import { CTASection } from '@/components/home/CTASection'
 

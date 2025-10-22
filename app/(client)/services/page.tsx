@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
-import { 
-  Sparkles, 
-  Clock, 
-  Tag, 
+import {
+  Sparkles,
+  Clock,
+  Tag,
   Calendar,
   ArrowRight,
   Check,
@@ -15,8 +15,10 @@ import {
   Heart,
   Gift
 } from 'lucide-react'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { fetchAllSpaData, setCategory } from '@/store/slices/servicesSlice'
 
-const services = [
+const servicesLocal = [
   {
     id: 'massage-therapeutique',
     nom: 'Massage Thérapeutique',
@@ -156,7 +158,7 @@ const services = [
     descriptionLongue: 'Offrez à vos pieds le soin qu\'ils méritent. Bain aromatique, gommage exfoliant, soin des cuticules, massage relaxant et pose de vernis semi-permanent pour des résultats durables.',
     duree: [60, 75],
     prix: { 60: 55, 75: 70 },
-    image: '/images/services/pedicure.svg',
+    image: '/images/spa/pedicure.jpg',
     categorie: 'Soins',
     bienfaits: [
       'Pieds doux et hydratés',
@@ -178,7 +180,7 @@ const services = [
     descriptionLongue: 'Vos mains révèlent votre élégance. Soin complet avec trempage, exfoliation, massage hydratant et pose de vernis semi-permanent qui tient jusqu\'à 3 semaines.',
     duree: [45, 60],
     prix: { 45: 45, 60: 60 },
-    image: '/images/services/manucure.svg',
+    image: '/images/spa/manicure.jpg',
     categorie: 'Soins',
     bienfaits: [
       'Mains douces et rajeunies',
@@ -222,7 +224,7 @@ const services = [
     descriptionLongue: 'Révélez l\'éclat de votre peau avec notre soin du visage sur mesure. Nettoyage en profondeur, exfoliation douce, masque adapté et massage facial pour une peau radieuse.',
     duree: [60, 90],
     prix: { 60: 75, 90: 110 },
-    image: '/images/services/facial.svg',
+    image: '/images/spa/soin-visage.png',
     categorie: 'Soins',
     bienfaits: [
       'Peau éclatante et lumineuse',
@@ -239,8 +241,9 @@ const services = [
   }
 ]
 
-const forfaits = [
+const forfaitsLocal = [
   {
+    id: '1',
     nom: 'Forfait Détente',
     description: 'Massage 50min + Hammam',
     prixIndividuel: 130,
@@ -250,6 +253,7 @@ const forfaits = [
     services: ['massage-therapeutique', 'hammam']
   },
   {
+    id: '2',
     nom: 'Forfait Renaissance',
     description: 'Soin visage + Manucure + Pédicure',
     prixIndividuel: 150,
@@ -259,6 +263,7 @@ const forfaits = [
     services: ['facial', 'manucure', 'pedicure']
   },
   {
+    id: '3',
     nom: 'Forfait Complet',
     description: 'Tous les services (journée spa)',
     prixIndividuel: 299,
@@ -269,29 +274,45 @@ const forfaits = [
   }
 ]
 
-const certificatsCadeaux = [
-  { montant: 25, populaire: false },
-  { montant: 50, populaire: true },
-  { montant: 100, populaire: true },
-  { montant: 150, populaire: false },
-  { montant: 200, populaire: true },
-  { montant: 250, populaire: false },
-  { montant: 300, populaire: false },
-  { montant: 350, populaire: false },
-  { montant: 400, populaire: false },
-  { montant: 450, populaire: false },
-  { montant: 500, populaire: true },
+const certificatsCadeauxLocal = [
+  { id: '1', montant: 25, populaire: false, disponible: true },
+  { id: '2', montant: 50, populaire: true, disponible: true },
+  { id: '3', montant: 100, populaire: true, disponible: true },
+  { id: '4', montant: 150, populaire: false, disponible: true },
+  { id: '5', montant: 200, populaire: true, disponible: true },
+  { id: '6', montant: 250, populaire: false, disponible: true },
+  { id: '7', montant: 300, populaire: false, disponible: true },
+  { id: '8', montant: 350, populaire: false, disponible: true },
+  { id: '9', montant: 400, populaire: false, disponible: true },
+  { id: '10', montant: 450, populaire: false, disponible: true },
+  { id: '11', montant: 500, populaire: true, disponible: true },
 ]
 
 export default function ServicesPage() {
-  const [selectedCategory, setSelectedCategory] = useState('Tous')
+  const dispatch = useAppDispatch()
   const [selectedService, setSelectedService] = useState<string | null>(null)
 
+  // Récupérer les données depuis Redux
+  const {
+    filteredServices,
+    forfaits,
+    certificats,
+    loading,
+    error,
+    filters
+  } = useAppSelector((state) => state.services)
+
+  // Utiliser les données locales comme fallback si l'API n'a pas encore chargé
+  const services = filteredServices.length > 0 ? filteredServices : servicesLocal
+  const forfaitsList = forfaits.length > 0 ? forfaits : forfaitsLocal
+  const certificatsList = certificats.length > 0 ? certificats : certificatsCadeauxLocal
+
   const categories = ['Tous', 'Massage', 'Spa', 'Soins']
-  
-  const filteredServices = selectedCategory === 'Tous'
-    ? services
-    : services.filter(s => s.categorie === selectedCategory)
+
+  // Charger les données au montage du composant
+  useEffect(() => {
+    dispatch(fetchAllSpaData())
+  }, [dispatch])
 
   return (
     <div className="min-h-screen pt-16 bg-neutral-50">
@@ -356,9 +377,9 @@ export default function ServicesPage() {
             {categories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => setSelectedCategory(cat)}
+                onClick={() => dispatch(setCategory(cat))}
                 className={`px-6 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                  selectedCategory === cat
+                  filters.category === cat
                     ? 'bg-primary-600 text-white shadow-md'
                     : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                 }`}
@@ -373,8 +394,28 @@ export default function ServicesPage() {
       {/* Services */}
       <section id="services" className="py-16 bg-neutral-50">
         <div className="container-custom">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredServices.map((service, index) => (
+          {loading && (
+            <div className="text-center py-12">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent"></div>
+              <p className="mt-4 text-neutral-600">Chargement des services...</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+              <p className="text-red-600">{error}</p>
+              <button
+                onClick={() => dispatch(fetchAllSpaData())}
+                className="btn-primary mt-4"
+              >
+                Réessayer
+              </button>
+            </div>
+          )}
+
+          {!loading && !error && (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {services.map((service, index) => (
               <motion.div
                 key={service.id}
                 initial={{ opacity: 0, y: 30 }}
@@ -473,7 +514,8 @@ export default function ServicesPage() {
                 </div>
               </motion.div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -496,7 +538,7 @@ export default function ServicesPage() {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {forfaits.map((forfait, index) => (
+            {forfaitsList.map((forfait, index) => (
               <motion.div
                 key={forfait.nom}
                 initial={{ opacity: 0, y: 20 }}
@@ -528,11 +570,11 @@ export default function ServicesPage() {
 
                 <div className="flex items-baseline justify-center gap-2 mb-6">
                   <span className="font-display text-4xl font-bold text-primary-600">
-                    {forfait.prix}$
+                    {forfait.prixIndividuel}$
                   </span>
                   <div className="text-left">
                     <div className="badge-success text-xs">
-                      -{forfait.economie}$
+                      -{forfait.economieIndividuel}$
                     </div>
                   </div>
                 </div>
@@ -549,7 +591,7 @@ export default function ServicesPage() {
                   <p className="text-xs font-semibold text-neutral-700 mb-2">Inclus :</p>
                   <ul className="space-y-1">
                     {forfait.services.map((serviceId) => {
-                      const service = services.find(s => s.id === serviceId)
+                      const service = [...services, ...servicesLocal].find(s => s.id === serviceId)
                       return (
                         <li key={serviceId} className="flex items-center gap-2 text-xs text-neutral-600">
                           <Check className="h-3 w-3 text-green-600 flex-shrink-0" />
@@ -587,7 +629,7 @@ export default function ServicesPage() {
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-            {certificatsCadeaux.map((certificat, index) => (
+            {certificatsList.filter(c => c.disponible).map((certificat, index) => (
               <motion.div
                 key={certificat.montant}
                 initial={{ opacity: 0, scale: 0.9 }}

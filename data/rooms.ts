@@ -2,7 +2,7 @@ import { Room } from '@/types/room'
 
 export const rooms: Room[] = [
   {
-    id: 1,
+    id: '1',
     nom: 'Suite Royale',
     categorie: 'Premium',
     description: 'Notre suite la plus luxueuse avec vue panoramique sur le fleuve Saint-Laurent',
@@ -21,7 +21,7 @@ export const rooms: Room[] = [
     disponible: true
   },
   {
-    id: 2,
+    id: '2',
     nom: 'Chambre Deluxe',
     categorie: 'Standard',
     description: 'Confort moderne avec tout l\'équipement nécessaire pour un séjour agréable',
@@ -40,7 +40,7 @@ export const rooms: Room[] = [
     disponible: true
   },
   {
-    id: 3,
+    id: '3',
     nom: 'Suite Familiale',
     categorie: 'Famille',
     description: 'Espace généreux parfait pour toute la famille avec deux chambres séparées',
@@ -59,7 +59,7 @@ export const rooms: Room[] = [
     disponible: true
   },
   {
-    id: 4,
+    id: '4',
     nom: 'Chambre Confort',
     categorie: 'Standard',
     description: 'Parfaite pour un séjour court, offrant tout le confort essentiel',
@@ -76,7 +76,7 @@ export const rooms: Room[] = [
     disponible: true
   },
   {
-    id: 5,
+    id: '5',
     nom: 'Suite Exécutive',
     categorie: 'Business',
     description: 'Idéale pour les voyageurs d\'affaires avec espace de travail dédié',
@@ -93,7 +93,7 @@ export const rooms: Room[] = [
     disponible: true
   },
   {
-    id: 6,
+    id: '6',
     nom: 'Suite Panoramique',
     categorie: 'Premium',
     description: 'Vue spectaculaire à 180° sur le fleuve et les montagnes',
@@ -113,6 +113,6 @@ export const rooms: Room[] = [
   },
 ]
 
-export const getRoomById = (id: number): Room | undefined => {
-  return rooms.find(room => room.id === id)
+export const getRoomById = (id: string | number): Room | undefined => {
+  return rooms.find(room => room.id === id.toString())
 }

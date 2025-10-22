@@ -151,24 +151,90 @@ export const markAvisAsHelpful = (avisId: number) => {
   return apiService.post(`/avis/${avisId}/utile`)
 }
 
-// ==================== SERVICES ====================
+// ==================== SERVICES SPA ====================
 
 /**
- * Récupère tous les services (spa, hammam, etc.)
+ * Récupère tous les services spa (massages, soins, etc.)
  */
 export const getAllServices = () => {
-  return apiService.get('/services')
+  return apiService.get('/api/v1/spa/services')
 }
 
 /**
- * Réserve un service
+ * Récupère un service spa par son ID
  */
-export const reserveService = (data: {
-  serviceId: number
+export const getServiceById = (id: string) => {
+  return apiService.get(`/api/v1/spa/services/${id}`)
+}
+
+/**
+ * Récupère tous les forfaits spa
+ */
+export const getAllForfaits = () => {
+  return apiService.get('/api/v1/spa/forfaits')
+}
+
+/**
+ * Récupère un forfait spa par son ID
+ */
+export const getForfaitById = (id: string) => {
+  return apiService.get(`/api/v1/spa/forfaits/${id}`)
+}
+
+/**
+ * Récupère tous les certificats cadeaux
+ */
+export const getAllCertificats = () => {
+  return apiService.get('/api/v1/spa/certificats')
+}
+
+/**
+ * Récupère un certificat cadeau par son ID
+ */
+export const getCertificatById = (id: string) => {
+  return apiService.get(`/api/v1/spa/certificats/${id}`)
+}
+
+/**
+ * Crée une réservation de service spa
+ */
+export const createSpaReservation = (data: {
+  serviceId: string
   date: string
   heure: string
+  clientId?: string
+  clientInfo?: {
+    nom: string
+    prenom: string
+    email: string
+    telephone: string
+  }
+  notes?: string
 }) => {
-  return apiService.post('/services/reserve', data)
+  return apiService.post('/api/v1/spa/reservations', data)
+}
+
+/**
+ * Récupère les réservations spa
+ */
+export const getSpaReservations = (params?: {
+  clientId?: string
+  serviceId?: string
+  date?: string
+  status?: string
+}) => {
+  return apiService.get('/api/v1/spa/reservations', { params })
+}
+
+/**
+ * Récupère les statistiques spa
+ */
+export const getSpaStatistics = (params?: {
+  startDate?: string
+  endDate?: string
+  groupBy?: 'day' | 'week' | 'month'
+}) => {
+  return apiService.get('/api/v1/spa/statistics', { params })
 }
 
 // ==================== AUTHENTIFICATION ====================
