@@ -50,8 +50,14 @@ export const fetchRooms = createAsyncThunk(
 
       return transformedRooms
     } catch (error: any) {
+      console.error('❌ Erreur fetchRooms:', error)
+
+      // Détecter les erreurs réseau (serveur injoignable)
+      if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        return rejectWithValue('MAINTENANCE')
+      }
+
       const message = error.response?.data?.message || error.message || 'Erreur inconnue'
-      console.error('Erreur fetchRooms:', error)
       return rejectWithValue(message)
     }
   }

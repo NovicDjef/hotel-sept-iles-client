@@ -132,7 +132,7 @@ export default function HomePage() {
               className="relative aspect-square lg:aspect-auto lg:h-[500px] rounded-3xl overflow-hidden shadow-strong"
             >
               <Image
-                src="/images/location-map.svg"
+                src="/images/hotel/vueseptiles.png"
                 alt="Localisation Hôtel Sept-Îles"
                 fill
                 className="object-cover"
@@ -140,10 +140,10 @@ export default function HomePage() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
               <div className="absolute bottom-6 left-6 right-6 text-white">
                 <h3 className="font-display text-2xl font-bold mb-2">
-                  123 rue Principale
+                  451, avenue Arnaud
                 </h3>
                 <p className="text-white/90">
-                  Sept-Îles, Québec G4R 1A1
+                  Sept-Îles, Québec G4R 3B3
                 </p>
               </div>
             </motion.div>

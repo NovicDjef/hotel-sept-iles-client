@@ -106,6 +106,8 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
   const tvq = subtotal * 0.09975  // TVQ 9.975%
   const total = subtotal + tps + tvq
 
+  const totalPriceWithServices = subtotal + tps + tvq 
+
   const steps = [
     { number: 0, title: 'Dates', icon: Calendar },
     { number: 1, title: 'Services', icon: Sparkles },
@@ -568,7 +570,7 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-neutral-700">Prix estimé:</span>
                                 <span className="font-display text-2xl font-bold text-primary-600">
-                                  {chambre.prix * calculateNights()}$
+                                  {totalPriceWithServices.toFixed(2)}$
                                 </span>
                               </div>
                               <div className="text-xs text-neutral-600 mt-2">

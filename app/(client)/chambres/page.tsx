@@ -23,6 +23,7 @@ import { SearchBar } from '@/components/chambres/SearchBar'
 import { FilterSidebar } from '@/components/chambres/FilterSidebar'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchRooms } from '@/store/slices/roomsSlice'
+import { MaintenanceMessage } from '@/components/common/MaintenanceMessage'
 
 const categories = ['Toutes', 'Premium', 'Standard', 'Famille', 'Business']
 
@@ -164,16 +165,27 @@ export default function ChambresPage() {
                 </div>
               )}
 
-              {/* Error state */}
-              {error && (
-                <div className="text-center py-16">
-                  <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4">
-                    <Filter className="h-8 w-8 text-red-600" />
+              {/* Error state - Maintenance */}
+              {error && error === 'MAINTENANCE' && (
+                <MaintenanceMessage
+                  onRetry={() => dispatch(fetchRooms())}
+                  submessage="Nos chambres seront de nouveau disponibles très bientôt."
+                  email="reservations@hotel-sept-iles.com"
+                />
+              )}
+
+              {/* Error state - Autre erreur */}
+              {error && error !== 'MAINTENANCE' && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center max-w-md mx-auto">
+                  <div className="bg-red-100 rounded-full p-3 w-fit mx-auto mb-4">
+                    <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
                   </div>
-                  <h3 className="font-display text-2xl font-bold text-neutral-900 mb-2">
+                  <h3 className="font-display text-xl font-bold text-neutral-900 mb-2">
                     Erreur de chargement
                   </h3>
-                  <p className="text-red-600 mb-6">{error}</p>
+                  <p className="text-red-600 text-sm mb-6">{error}</p>
                   <button
                     onClick={() => dispatch(fetchRooms())}
                     className="btn-primary"

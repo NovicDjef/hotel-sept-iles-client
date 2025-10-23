@@ -27,6 +27,7 @@ import { ReviewsSection } from '@/components/chambres/ReviewsSection'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchRooms } from '@/store/slices/roomsSlice'
 import { Room } from '@/types/room'
+import { MaintenanceMessage } from '@/components/common/MaintenanceMessage'
 
 export default function ChambreDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false)
@@ -34,7 +35,7 @@ export default function ChambreDetailPage({ params }: { params: Promise<{ id: st
   const [roomId, setRoomId] = useState<string | null>(null)
 
   const dispatch = useAppDispatch()
-  const { rooms, loading } = useAppSelector((state) => state.rooms)
+  const { rooms, loading, error } = useAppSelector((state) => state.rooms)
 
   // Unwrap params Promise
   useEffect(() => {
@@ -50,12 +51,76 @@ export default function ChambreDetailPage({ params }: { params: Promise<{ id: st
   // Trouver la chambre par ID
   const chambre = roomId ? rooms.find(r => r.id === roomId) : null
 
-  if (loading || !chambre) {
+  // État de chargement
+  if (loading) {
     return (
       <div className="min-h-screen pt-16 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent mb-4"></div>
           <p className="text-neutral-600">Chargement de la chambre...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // État d'erreur - Maintenance
+  if (error && error === 'MAINTENANCE') {
+    return (
+      <div className="min-h-screen pt-16 flex items-center justify-center px-4">
+        <MaintenanceMessage
+          onRetry={() => dispatch(fetchRooms())}
+          submessage="Nos chambres seront de nouveau disponibles très bientôt."
+          email="reservations@hotel-sept-iles.com"
+        />
+      </div>
+    )
+  }
+
+  // État d'erreur - Autre erreur
+  if (error && error !== 'MAINTENANCE') {
+    return (
+      <div className="min-h-screen pt-16 flex items-center justify-center px-4">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center max-w-md">
+          <div className="bg-red-100 rounded-full p-3 w-fit mx-auto mb-4">
+            <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="font-display text-xl font-bold text-neutral-900 mb-2">
+            Erreur de chargement
+          </h3>
+          <p className="text-red-600 text-sm mb-6">{error}</p>
+          <button
+            onClick={() => dispatch(fetchRooms())}
+            className="btn-primary"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Chambre non trouvée
+  if (!chambre) {
+    return (
+      <div className="min-h-screen pt-16 flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 mb-4">
+            <svg className="h-8 w-8 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <h3 className="font-display text-2xl font-bold text-neutral-900 mb-2">
+            Chambre introuvable
+          </h3>
+          <p className="text-neutral-600 mb-6">
+            La chambre que vous recherchez n'existe pas ou n'est plus disponible.
+          </p>
+          <Link href="/chambres" className="btn-primary inline-flex items-center gap-2">
+            <ArrowLeft className="h-5 w-5" />
+            Retour aux chambres
+          </Link>
         </div>
       </div>
     )

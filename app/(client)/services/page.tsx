@@ -17,7 +17,10 @@ import {
 } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchAllSpaData, setCategory } from '@/store/slices/servicesSlice'
+import { MaintenanceMessage } from '@/components/common/MaintenanceMessage'
 
+// Suppression de toutes les données en dur - maintenant récupérées depuis l'API
+/*
 const servicesLocal = [
   {
     id: 'massage-therapeutique',
@@ -287,6 +290,7 @@ const certificatsCadeauxLocal = [
   { id: '10', montant: 450, populaire: false, disponible: true },
   { id: '11', montant: 500, populaire: true, disponible: true },
 ]
+*/
 
 export default function ServicesPage() {
   const dispatch = useAppDispatch()
@@ -297,17 +301,27 @@ export default function ServicesPage() {
     filteredServices,
     forfaits,
     certificats,
+    categories,
     loading,
     error,
     filters
   } = useAppSelector((state) => state.services)
 
-  // Utiliser les données locales comme fallback si l'API n'a pas encore chargé
-  const services = filteredServices.length > 0 ? filteredServices : servicesLocal
-  const forfaitsList = forfaits.length > 0 ? forfaits : forfaitsLocal
-  const certificatsList = certificats.length > 0 ? certificats : certificatsCadeauxLocal
+  // Plus de données locales - tout vient de l'API
+  const services = filteredServices
+  const forfaitsList = forfaits
+  const certificatsList = certificats
 
-  const categories = ['Tous', 'Massage', 'Spa', 'Soins']
+  // Catégories par défaut si l'API échoue
+  const defaultCategories = [
+    { id: 'tous', name: 'Tous', slug: 'tous', servicesCount: 0 },
+    { id: 'massage', name: 'Massage', slug: 'massage', servicesCount: 0 },
+    { id: 'spa', name: 'Spa', slug: 'spa', servicesCount: 0 },
+    { id: 'soins', name: 'Soins', slug: 'soins', servicesCount: 0 }
+  ]
+
+  // Utiliser les catégories de l'API ou les catégories par défaut
+  const displayCategories = categories.length > 0 ? categories : defaultCategories
 
   // Charger les données au montage du composant
   useEffect(() => {
@@ -374,17 +388,20 @@ export default function ServicesPage() {
       <section className="bg-white border-b border-neutral-200 sticky top-16 z-40">
         <div className="container-custom py-4">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {categories.map((cat) => (
+            {displayCategories.map((cat) => (
               <button
-                key={cat}
-                onClick={() => dispatch(setCategory(cat))}
+                key={cat.id}
+                onClick={() => dispatch(setCategory(cat.slug))}
                 className={`px-6 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                  filters.category === cat
+                  filters.category === cat.slug
                     ? 'bg-primary-600 text-white shadow-md'
                     : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                 }`}
               >
-                {cat}
+                {cat.name}
+                {cat.servicesCount > 0 && (
+                  <span className="ml-2 text-xs opacity-75">({cat.servicesCount})</span>
+                )}
               </button>
             ))}
           </div>
@@ -401,19 +418,41 @@ export default function ServicesPage() {
             </div>
           )}
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-              <p className="text-red-600">{error}</p>
+          {error && error === 'MAINTENANCE' && (
+            <MaintenanceMessage
+              onRetry={() => dispatch(fetchAllSpaData())}
+              submessage="Nos services spa seront de nouveau disponibles très bientôt."
+              email="spa@hotel-sept-iles.com"
+            />
+          )}
+
+          {error && error !== 'MAINTENANCE' && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center max-w-md mx-auto">
+              <div className="bg-red-100 rounded-full p-3 w-fit mx-auto mb-4">
+                <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <p className="text-red-700 font-semibold mb-2">Une erreur est survenue</p>
+              <p className="text-red-600 text-sm mb-4">{error}</p>
               <button
                 onClick={() => dispatch(fetchAllSpaData())}
-                className="btn-primary mt-4"
+                className="btn-primary"
               >
                 Réessayer
               </button>
             </div>
           )}
 
-          {!loading && !error && (
+          {!loading && !error && services.length === 0 && (
+            <div className="text-center py-12">
+              <Sparkles className="h-16 w-16 mx-auto text-neutral-300 mb-4" />
+              <p className="text-neutral-600 text-lg">Aucun service disponible pour le moment</p>
+              <p className="text-neutral-500 text-sm mt-2">Veuillez réessayer plus tard</p>
+            </div>
+          )}
+
+          {!loading && !error && services.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {services.map((service, index) => (
               <motion.div
@@ -590,15 +629,12 @@ export default function ServicesPage() {
                 <div className="pt-4 border-t border-neutral-200 text-left">
                   <p className="text-xs font-semibold text-neutral-700 mb-2">Inclus :</p>
                   <ul className="space-y-1">
-                    {forfait.services.map((serviceId) => {
-                      const service = [...services, ...servicesLocal].find(s => s.id === serviceId)
-                      return (
-                        <li key={serviceId} className="flex items-center gap-2 text-xs text-neutral-600">
-                          <Check className="h-3 w-3 text-green-600 flex-shrink-0" />
-                          <span>{service?.nom}</span>
-                        </li>
-                      )
-                    })}
+                    {forfait.services.map((service) => (
+                      <li key={service.id} className="flex items-center gap-2 text-xs text-neutral-600">
+                        <Check className="h-3 w-3 text-green-600 flex-shrink-0" />
+                        <span>{service.nom}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </motion.div>

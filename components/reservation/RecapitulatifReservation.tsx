@@ -31,10 +31,17 @@ export function RecapitulatifReservation({
   // Calculer le prix de base (sans taxes) pour la simulation
   const prixParNuit = chambre.prix
   const totalBase = prixParNuit * nights
+  const totalBaseSpa = selectedServices.reduce((sum, s) => sum + s.prix, 0)
   const taxesTPS = totalBase * 0.05
   const taxesTVQ = totalBase * 0.09975
+  const taxesTPSspa = totalBaseSpa * 0.05
+  const taxesTVQspa = totalBaseSpa * 0.09975
+
+  const totalTaxes = taxesTPS + taxesTVQ + chambrePrixTotal
 
   const servicesPrix = selectedServices.reduce((sum, s) => sum + s.prix, 0)
+
+  const prixTotal = taxesTPSspa + taxesTVQspa + servicesPrix
 
   return (
     <motion.div
@@ -83,7 +90,7 @@ export function RecapitulatifReservation({
           <div className="h-px bg-neutral-200 my-1" />
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-neutral-700">Total chambre</span>
-            <span className="font-semibold text-primary-600">{chambrePrixTotal.toFixed(2)}$</span>
+            <span className="font-semibold text-primary-600">{totalTaxes.toFixed(2)}$</span>
           </div>
         </div>
       </div>
@@ -111,7 +118,7 @@ export function RecapitulatifReservation({
         <div className="space-y-2 mb-6 pb-6 border-b border-neutral-200">
           <div className="flex items-center justify-between text-sm">
             <span className="text-neutral-600">Total services</span>
-            <span className="font-semibold text-neutral-900">{servicesPrix.toFixed(2)}$</span>
+            <span className="font-semibold text-neutral-900">{prixTotal.toFixed(2)}$</span>
           </div>
         </div>
       )}

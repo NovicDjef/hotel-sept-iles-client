@@ -157,73 +157,75 @@ export const markAvisAsHelpful = (avisId: number) => {
  * Récupère tous les services spa (massages, soins, etc.)
  */
 export const getAllServices = () => {
-  return apiService.get('/api/v1/spa/services')
+  return apiService.get(`/api/v1/spa/services?hotelId=${hotelId}`)
 }
 
 /**
  * Récupère un service spa par son ID
  */
 export const getServiceById = (id: string) => {
-  return apiService.get(`/api/v1/spa/services/${id}`)
+  return apiService.get(`/api/v1/spa/services/${id}?hotelId=${hotelId}`)
 }
 
 /**
  * Récupère tous les forfaits spa
  */
 export const getAllForfaits = () => {
-  return apiService.get('/api/v1/spa/forfaits')
+  return apiService.get(`/api/v1/spa/forfaits?hotelId=${hotelId}`)
 }
 
 /**
  * Récupère un forfait spa par son ID
  */
 export const getForfaitById = (id: string) => {
-  return apiService.get(`/api/v1/spa/forfaits/${id}`)
+  return apiService.get(`/api/v1/spa/forfaits/${id}?hotelId=${hotelId}`)
 }
 
 /**
  * Récupère tous les certificats cadeaux
  */
 export const getAllCertificats = () => {
-  return apiService.get('/api/v1/spa/certificats')
+  return apiService.get(`/api/v1/spa/certificats?hotelId=${hotelId}`)
 }
 
 /**
  * Récupère un certificat cadeau par son ID
  */
 export const getCertificatById = (id: string) => {
-  return apiService.get(`/api/v1/spa/certificats/${id}`)
+  return apiService.get(`/api/v1/spa/certificats/${id}?hotelId=${hotelId}`)
 }
 
 /**
  * Crée une réservation de service spa
  */
 export const createSpaReservation = (data: {
-  serviceId: string
+  guestId: string
+  type: 'SERVICE' | 'FORFAIT'
+  serviceId?: string
+  forfaitId?: string
   date: string
   heure: string
-  clientId?: string
-  clientInfo?: {
-    nom: string
-    prenom: string
-    email: string
-    telephone: string
-  }
+  duree?: number
+  nombrePersonnes: number
   notes?: string
 }) => {
-  return apiService.post('/api/v1/spa/reservations', data)
+  const requestData = {
+    ...data,
+    hotelId: hotelId
+  }
+  return apiService.post('/api/v1/spa/reservations', requestData)
 }
 
 /**
  * Récupère les réservations spa
  */
 export const getSpaReservations = (params?: {
-  clientId?: string
+  guestId?: string
   serviceId?: string
   date?: string
   status?: string
 }) => {
-  return apiService.get('/api/v1/spa/reservations', { params })
+  return apiService.get(`/api/v1/spa/reservations?hotelId=${hotelId}`, { params })
 }
 
 /**
@@ -234,7 +236,48 @@ export const getSpaStatistics = (params?: {
   endDate?: string
   groupBy?: 'day' | 'week' | 'month'
 }) => {
-  return apiService.get('/api/v1/spa/statistics', { params })
+  return apiService.get(`/api/v1/spa/statistics?hotelId=${hotelId}`, { params })
+}
+
+/**
+ * Récupère les catégories de services spa
+ */
+export const getSpaCategories = () => {
+  return apiService.get('/api/v1/reservations/spa-categories')
+}
+
+/**
+ * Crée un certificat cadeau
+ */
+export const createCertificatCadeau = (data: {
+  montant: number
+  acheteurNom: string
+  acheteurEmail: string
+  acheteurPhone: string
+  beneficiaireNom?: string
+  beneficiaireEmail?: string
+  message?: string
+  dateExpiration?: string
+}) => {
+  const requestData = {
+    ...data,
+    hotelId: hotelId
+  }
+  return apiService.post('/api/v1/spa/certificats', requestData)
+}
+
+/**
+ * Valide un certificat cadeau par son code
+ */
+export const validateCertificatCadeau = (code: string) => {
+  return apiService.post(`/api/v1/spa/certificats/validate`, { code, hotelId })
+}
+
+/**
+ * Utilise un certificat cadeau
+ */
+export const useCertificatCadeau = (code: string, utiliseParId: string) => {
+  return apiService.post(`/api/v1/spa/certificats/use`, { code, utiliseParId, hotelId })
 }
 
 // ==================== AUTHENTIFICATION ====================

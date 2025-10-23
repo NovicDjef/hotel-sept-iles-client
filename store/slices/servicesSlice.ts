@@ -3,6 +3,7 @@ import {
   Service,
   Forfait,
   CertificatCadeau,
+  SpaCategory,
   transformApiServiceToService,
   transformApiForfaitToForfait,
   transformApiCertificatToCertificat
@@ -13,6 +14,7 @@ interface ServicesState {
   services: Service[]
   forfaits: Forfait[]
   certificats: CertificatCadeau[]
+  categories: SpaCategory[]
   filteredServices: Service[]
   loading: boolean
   error: string | null
@@ -25,11 +27,12 @@ const initialState: ServicesState = {
   services: [],
   forfaits: [],
   certificats: [],
+  categories: [],
   filteredServices: [],
   loading: false,
   error: null,
   filters: {
-    category: 'Tous',
+    category: 'tous',
   }
 }
 
@@ -52,8 +55,14 @@ export const fetchServices = createAsyncThunk(
 
       return transformedServices
     } catch (error: any) {
-      const message = error.response?.data?.message || error.message || 'Erreur lors de la récupération des services'
       console.error('Erreur fetchServices:', error)
+
+      // Détecter les erreurs réseau (serveur injoignable)
+      if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        return rejectWithValue('MAINTENANCE')
+      }
+
+      const message = error.response?.data?.message || error.message || 'Erreur lors de la récupération des services'
       return rejectWithValue(message)
     }
   }
@@ -76,8 +85,14 @@ export const fetchForfaits = createAsyncThunk(
 
       return transformedForfaits
     } catch (error: any) {
-      const message = error.response?.data?.message || error.message || 'Erreur lors de la récupération des forfaits'
       console.error('Erreur fetchForfaits:', error)
+
+      // Détecter les erreurs réseau (serveur injoignable)
+      if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        return rejectWithValue('MAINTENANCE')
+      }
+
+      const message = error.response?.data?.message || error.message || 'Erreur lors de la récupération des forfaits'
       return rejectWithValue(message)
     }
   }
@@ -100,8 +115,42 @@ export const fetchCertificats = createAsyncThunk(
 
       return transformedCertificats
     } catch (error: any) {
-      const message = error.response?.data?.message || error.message || 'Erreur lors de la récupération des certificats'
       console.error('Erreur fetchCertificats:', error)
+
+      // Détecter les erreurs réseau (serveur injoignable)
+      if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        return rejectWithValue('MAINTENANCE')
+      }
+
+      const message = error.response?.data?.message || error.message || 'Erreur lors de la récupération des certificats'
+      return rejectWithValue(message)
+    }
+  }
+)
+
+// Thunk asynchrone pour récupérer les catégories spa depuis l'API
+export const fetchSpaCategories = createAsyncThunk(
+  'services/fetchSpaCategories',
+  async (_, { rejectWithValue }) => {
+    try {
+      const { getSpaCategories } = await import('@/services/api/routeApi')
+      const response = await getSpaCategories()
+      console.log('Réponse API catégories:', response.data)
+
+      // L'API retourne { success, message, data }
+      const apiCategories = response.data.data || response.data
+      console.log('Catégories API récupérées:', apiCategories)
+
+      return apiCategories as SpaCategory[]
+    } catch (error: any) {
+      console.error('Erreur fetchSpaCategories:', error)
+
+      // Détecter les erreurs réseau (serveur injoignable)
+      if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        return rejectWithValue('MAINTENANCE')
+      }
+
+      const message = error.response?.data?.message || error.message || 'Erreur lors de la récupération des catégories'
       return rejectWithValue(message)
     }
   }
@@ -112,11 +161,12 @@ export const fetchAllSpaData = createAsyncThunk(
   'services/fetchAllSpaData',
   async (_, { dispatch, rejectWithValue }) => {
     try {
-      // Exécuter les 3 requêtes en parallèle
+      // Exécuter les 4 requêtes en parallèle
       const results = await Promise.allSettled([
         dispatch(fetchServices()).unwrap(),
         dispatch(fetchForfaits()).unwrap(),
         dispatch(fetchCertificats()).unwrap(),
+        dispatch(fetchSpaCategories()).unwrap(),
       ])
 
       // Vérifier si toutes les requêtes ont réussi
@@ -202,6 +252,14 @@ const servicesSlice = createSlice({
       console.error('Erreur certificats:', action.payload)
     })
 
+    // fetchSpaCategories
+    builder.addCase(fetchSpaCategories.fulfilled, (state, action) => {
+      state.categories = action.payload
+    })
+    builder.addCase(fetchSpaCategories.rejected, (state, action) => {
+      console.error('Erreur catégories:', action.payload)
+    })
+
     // fetchAllSpaData
     builder.addCase(fetchAllSpaData.pending, (state) => {
       state.loading = true
@@ -221,9 +279,19 @@ const servicesSlice = createSlice({
 function applyFilters(state: ServicesState) {
   let filtered = state.services
 
-  // Filtrer par catégorie
-  if (state.filters.category !== 'Tous') {
-    filtered = filtered.filter(service => service.categorie === state.filters.category)
+  // Filtrer par catégorie (utilise le slug: 'tous', 'massage', 'spa', 'soins')
+  if (state.filters.category !== 'tous') {
+    // Convertir le slug en format de catégorie (massage -> Massage, spa -> Spa, soins -> Soins)
+    const categoryMapping: { [key: string]: string } = {
+      'massage': 'Massage',
+      'spa': 'Spa',
+      'soins': 'Soins'
+    }
+
+    const categoryValue = categoryMapping[state.filters.category.toLowerCase()]
+    if (categoryValue) {
+      filtered = filtered.filter(service => service.categorie === categoryValue)
+    }
   }
 
   state.filteredServices = filtered
