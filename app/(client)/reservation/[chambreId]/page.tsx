@@ -30,7 +30,8 @@ import { getStripe } from '@/lib/stripe'
 import {
   calculateReservationPrice,
   createGuestReservation,
-  confirmReservationPayment
+  confirmReservationPayment,
+  createReservationWithPayment
 } from '@/services/api/routeApi'
 
 export default function ReservationPage({ params }: { params: Promise<{ chambreId: string }> }) {
@@ -185,49 +186,8 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
         }
       }
 
-      // ÉTAPE 2 : Quand on quitte l'écran d'informations client, créer la réservation PENDING
-      if (currentStep === 2 && clientInfo) {
-        try {
-          // Convertir les dates au format ISO complet
-          const checkInISO = new Date(checkIn).toISOString()
-          const checkOutISO = new Date(checkOut).toISOString()
-
-          console.log('📝 Création réservation avec:', {
-            roomId: chambreId,
-            checkInDate: checkInISO,
-            checkOutDate: checkOutISO,
-            numberOfGuests: guests,
-            firstName: clientInfo.prenom,
-            lastName: clientInfo.nom,
-            email: clientInfo.email,
-          })
-
-          const response = await createGuestReservation({
-            roomId: chambreId,
-            checkInDate: checkInISO,
-            checkOutDate: checkOutISO,
-            numberOfGuests: guests,
-            firstName: clientInfo.prenom,
-            lastName: clientInfo.nom,
-            email: clientInfo.email,
-            phone: clientInfo.telephone,
-            address: clientInfo.adresse,
-            specialRequests: clientInfo.commentaires,
-          })
-
-          console.log('✅ Réservation créée:', response.data.data)
-          setReservationId(response.data.data.reservation.id)
-        } catch (error: any) {
-          console.error('❌ Erreur lors de la création de la réservation:', error)
-          console.error('Détails de l\'erreur:', error.response?.data)
-
-          const errorMessage = error.response?.data?.message ||
-                             error.response?.data?.error ||
-                             'Erreur lors de la création de la réservation'
-          alert(errorMessage)
-          return
-        }
-      }
+      // ÉTAPE 2 : Validation des informations client (pas de création de réservation ici)
+      // La réservation sera créée après le paiement réussi
 
       setCurrentStep(currentStep + 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -241,17 +201,52 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
     }
   }
 
-  // ÉTAPE 3 : Gérer le paiement Stripe
+  // ÉTAPE 3 : Gérer le paiement Stripe et créer la réservation
   const handlePaymentSuccess = async (paymentMethodId: string) => {
-    if (!reservationId) {
-      alert('Erreur: ID de réservation manquant')
+    if (!clientInfo) {
+      alert('Erreur: Informations client manquantes')
       return
     }
 
     setPaymentProcessing(true)
     try {
-      const response = await confirmReservationPayment(reservationId, {
+      // Convertir les dates au format ISO
+      const checkInISO = new Date(checkIn).toISOString()
+      const checkOutISO = new Date(checkOut).toISOString()
+
+      // Préparer les services spa
+      const spaServices = selectedServices.map(service => ({
+        serviceId: service.id,
+        scheduledDate: service.date || checkIn,
+        scheduledTime: service.heure || '10:00'
+      }))
+
+      console.log('💳 Création réservation avec paiement:', {
+        roomId: chambreId,
+        checkInDate: checkInISO,
+        checkOutDate: checkOutISO,
+        numberOfGuests: guests,
+        firstName: clientInfo.prenom,
+        lastName: clientInfo.nom,
+        email: clientInfo.email,
+        phone: clientInfo.telephone,
+        spaServices: spaServices.length > 0 ? spaServices : undefined,
+      })
+
+      // Créer la réservation avec le paiement en une seule étape
+      const response = await createReservationWithPayment({
+        roomId: chambreId,
+        checkInDate: checkInISO,
+        checkOutDate: checkOutISO,
+        numberOfGuests: guests,
+        firstName: clientInfo.prenom,
+        lastName: clientInfo.nom,
+        email: clientInfo.email,
+        phone: clientInfo.telephone,
+        address: clientInfo.adresse,
+        specialRequests: clientInfo.commentaires,
         paymentMethodId,
+        spaServices: spaServices.length > 0 ? spaServices : undefined,
       })
 
       const confirmedReservation = response.data.data
@@ -641,7 +636,7 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
                     onClick={handleNext}
                     disabled={
                       (currentStep === 0 && (!checkIn || !checkOut)) ||
-                      (currentStep === 2 && !clientInfo)
+                      (currentStep === 2 && (!clientInfo || !clientInfo.prenom || !clientInfo.nom || !clientInfo.email || !clientInfo.telephone))
                     }
                     className="btn-primary group disabled:opacity-50 disabled:cursor-not-allowed"
                   >

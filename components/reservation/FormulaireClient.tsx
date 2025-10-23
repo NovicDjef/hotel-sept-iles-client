@@ -28,6 +28,13 @@ export function FormulaireClient({ onClientInfoChange, initialData }: Formulaire
   const [errors, setErrors] = useState<any>({})
   const [isRegistering, setIsRegistering] = useState(false)
 
+  // Initialiser les données au montage
+  useEffect(() => {
+    if (initialData) {
+      onClientInfoChange(initialData)
+    }
+  }, [])
+
   // Si l'utilisateur est déjà connecté, pré-remplir le formulaire
   useEffect(() => {
     if (isAuthenticated && user) {

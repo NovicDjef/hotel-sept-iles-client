@@ -102,6 +102,44 @@ export const confirmReservationPayment = (reservationId: string, data: {
 }
 
 /**
+ * Créer une réservation avec paiement direct (en une seule étape)
+ */
+export const createReservationWithPayment = (data: {
+  // Informations chambre et dates
+  roomId: string
+  checkInDate: string
+  checkOutDate: string
+  numberOfGuests: number
+
+  // Informations client
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  address?: string
+
+  // Paiement
+  paymentMethodId: string
+
+  // Services spa (optionnel)
+  spaServices?: Array<{
+    serviceId: string
+    scheduledDate: string
+    scheduledTime: string
+  }>
+
+  // Options
+  specialRequests?: string
+  hotelId?: string
+}) => {
+  const requestData = {
+    ...data,
+    hotelId: data.hotelId || hotelId
+  }
+  return apiService.post('/api/v1/reservations/guest-with-payment', requestData)
+}
+
+/**
  * Récupère les réservations d'un utilisateur
  */
 export const getUserReservations = () => {

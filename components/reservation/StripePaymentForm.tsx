@@ -1,8 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { ShieldCheck, Loader2, AlertCircle } from 'lucide-react'
+import {
+  CardNumberElement,
+  CardExpiryElement,
+  CardCvcElement,
+  useStripe,
+  useElements
+} from '@stripe/react-stripe-js'
+import { ShieldCheck, Loader2, AlertCircle, CreditCard, Calendar, Lock } from 'lucide-react'
 
 interface StripePaymentFormProps {
   amount: number
@@ -30,16 +36,16 @@ export function StripePaymentForm({ amount, onSuccess, onError, loading = false 
     setError(null)
 
     try {
-      const cardElement = elements.getElement(CardElement)
+      const cardNumberElement = elements.getElement(CardNumberElement)
 
-      if (!cardElement) {
+      if (!cardNumberElement) {
         throw new Error('Élément de carte non trouvé')
       }
 
       // Créer une méthode de paiement
       const { error: stripeError, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
-        card: cardElement,
+        card: cardNumberElement,
       })
 
       if (stripeError) {
@@ -70,43 +76,100 @@ export function StripePaymentForm({ amount, onSuccess, onError, loading = false 
         '::placeholder': {
           color: '#9ca3af',
         },
-        lineHeight: '48px',
+        lineHeight: '24px',
+        padding: '12px 0',
       },
       invalid: {
         color: '#ef4444',
         iconColor: '#ef4444',
       },
+      complete: {
+        color: '#059669',
+        iconColor: '#059669',
+      },
     },
-    hidePostalCode: true,
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Message de sécurité */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-        <ShieldCheck className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-        <div>
-          <div className="font-semibold text-blue-900 mb-1">
-            Paiement 100% sécurisé
+      {/* Message de sécurité et logos des cartes */}
+      <div className="space-y-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+          <ShieldCheck className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="font-semibold text-blue-900 mb-1">
+              Paiement 100% sécurisé
+            </div>
+            <div className="text-sm text-blue-700">
+              Vos informations sont cryptées et protégées par Stripe
+            </div>
           </div>
-          <div className="text-sm text-blue-700">
-            Vos informations sont cryptées et protégées par Stripe
+        </div>
+
+        {/* Cartes acceptées */}
+        <div className="flex items-center justify-between bg-neutral-50 rounded-lg p-3">
+          <span className="text-sm text-neutral-600 font-medium">Cartes acceptées :</span>
+          <div className="flex items-center gap-2">
+            <div className="bg-white rounded border border-neutral-200 px-2 py-1 text-xs font-semibold text-neutral-700">
+              VISA
+            </div>
+            <div className="bg-white rounded border border-neutral-200 px-2 py-1 text-xs font-semibold text-neutral-700">
+              Mastercard
+            </div>
+            <div className="bg-white rounded border border-neutral-200 px-2 py-1 text-xs font-semibold text-neutral-700">
+              AMEX
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Carte de crédit */}
-      <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-2">
-          Informations de carte
-        </label>
-        <div className="relative">
-          <div className="input-custom">
-            <CardElement options={cardElementOptions} />
+      {/* Informations de carte */}
+      <div className="space-y-4">
+        {/* Numéro de carte */}
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 mb-2">
+            Numéro de carte
+          </label>
+          <div className="relative">
+            <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none z-10" />
+            <div className="input-custom pl-10">
+              <CardNumberElement options={cardElementOptions} />
+            </div>
           </div>
         </div>
+
+        {/* Date d'expiration et CVV */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Date d'expiration */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Date d'expiration
+            </label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none z-10" />
+              <div className="input-custom pl-10">
+                <CardExpiryElement options={cardElementOptions} />
+              </div>
+            </div>
+          </div>
+
+          {/* Code de sécurité (CVV) */}
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2 flex items-center gap-2">
+              CVV
+              <span className="text-xs text-neutral-500 font-normal">(3 chiffres au dos)</span>
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none z-10" />
+              <div className="input-custom pl-10">
+                <CardCvcElement options={cardElementOptions} />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <p className="text-xs text-neutral-500 mt-2">
-          Cartes de test : 4242 4242 4242 4242 (Succès) • 4000 0000 0000 0002 (Refusée)
+          💳 Cartes de test : <span className="font-mono">4242 4242 4242 4242</span> (Succès) • <span className="font-mono">4000 0000 0000 0002</span> (Refusée)
         </p>
       </div>
 
