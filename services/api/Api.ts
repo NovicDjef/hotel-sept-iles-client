@@ -2,18 +2,25 @@ import axios from 'axios'
 
 // const BASE_URL = 'https://api.novic.dev'
 const BASE_URL = `http://localhost:5001`
-const hotelId = `cmggqdtba0000xxqtph1k8505`
+const hotelId = `cmh3iygew00009crzsls6rlzy`
 
 // Routes publiques qui ne nécessitent pas d'authentification
+// IMPORTANT: Ces routes devraient être publiques mais le backend les bloque actuellement
+// En attendant la correction backend, on les laisse en mode "semi-public" (avec token optionnel)
 const PUBLIC_ROUTES = [
-  '/api/v1/spa/services',      // Liste des services spa (GET tous + GET par ID)
-  '/api/v1/spa/forfaits',      // Liste des forfaits spa (GET tous + GET par ID)
-  '/api/v1/spa/certificats',   // Liste des certificats cadeaux (GET tous + GET par ID)
-  '/api/v1/spa/statistics',    // Statistiques spa (publiques)
-  '/api/v1/reservations/spa-categories', // Catégories spa (publiques)
   '/api/v1/rooms',             // Liste des chambres
   '/api/v1/auth/guest',        // Enregistrement invité
   '/api/v1/reservations/calculate', // Calcul prix réservation
+]
+
+// Routes qui DEVRAIENT être publiques mais nécessitent un token côté backend actuellement
+// On n'envoie le token que s'il existe, mais on n'empêche pas la requête
+const SEMI_PUBLIC_ROUTES = [
+  '/api/v1/spa/services',      // Liste des services spa
+  '/api/v1/spa/forfaits',      // Liste des forfaits spa
+  '/api/v1/spa/certificats',   // Liste des certificats cadeaux
+  '/api/v1/spa/statistics',    // Statistiques spa
+  '/api/v1/reservations/spa-categories', // Catégories spa
 ]
 
 /**
@@ -22,6 +29,14 @@ const PUBLIC_ROUTES = [
 const isPublicRoute = (url?: string): boolean => {
   if (!url) return false
   return PUBLIC_ROUTES.some(route => url.includes(route))
+}
+
+/**
+ * Vérifie si une route est semi-publique (token optionnel)
+ */
+const isSemiPublicRoute = (url?: string): boolean => {
+  if (!url) return false
+  return SEMI_PUBLIC_ROUTES.some(route => url.includes(route))
 }
 
 const apiService = axios.create({
@@ -40,25 +55,48 @@ const apiService = axios.create({
 apiService.interceptors.request.use(
   async (config) => {
     const routeIsPublic = isPublicRoute(config.url)
+    const routeIsSemiPublic = isSemiPublicRoute(config.url)
 
     console.log('🔵 API Request:', {
       baseURL: config.baseURL,
       url: config.url,
       fullURL: `${config.baseURL}${config.url}`,
       isPublic: routeIsPublic,
-      requiresAuth: !routeIsPublic
+      isSemiPublic: routeIsSemiPublic,
+      requiresAuth: !routeIsPublic && !routeIsSemiPublic
     })
 
-    // Ajouter le token et withCredentials uniquement pour les routes privées
-    if (!routeIsPublic) {
-      // Activer withCredentials pour les routes authentifiées
+    if (routeIsPublic) {
+      // Routes publiques : pas de credentials et pas de token
+      config.withCredentials = false
+      delete config.headers.Authorization
+    } else if (routeIsSemiPublic) {
+      // Routes semi-publiques : envoyer le token s'il existe, mais ne pas bloquer sinon
+      // Ne pas utiliser withCredentials pour éviter les problèmes CORS
+      config.withCredentials = false
+
+      try {
+        if (typeof window !== 'undefined') {
+          const token = localStorage.getItem('userToken')
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`
+            console.log('🔑 Token envoyé pour route semi-publique')
+          } else {
+            console.log('⚠️ Pas de token trouvé, requête sans auth')
+            delete config.headers.Authorization
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération du token:', error)
+        delete config.headers.Authorization
+      }
+    } else {
+      // Routes privées : token obligatoire
       config.withCredentials = true
 
       try {
-        // Pour Next.js, on utilise localStorage au lieu d'AsyncStorage
         if (typeof window !== 'undefined') {
           const token = localStorage.getItem('userToken')
-
           if (token) {
             config.headers.Authorization = `Bearer ${token}`
           }
@@ -66,9 +104,6 @@ apiService.interceptors.request.use(
       } catch (error) {
         console.error('Erreur lors de la récupération du token:', error)
       }
-    } else {
-      // Routes publiques : pas de credentials
-      config.withCredentials = false
     }
 
     return config

@@ -54,7 +54,7 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
   // Récupérer les paramètres de l'URL
   const [checkIn, setCheckIn] = useState(searchParams.get('checkIn') || '')
   const [checkOut, setCheckOut] = useState(searchParams.get('checkOut') || '')
-  const [guests, setGuests] = useState(Number(searchParams.get('guests')) || 2)
+  const [guests, setGuests] = useState(Number(searchParams.get('guests')) || 1)
 
   useEffect(() => {
     if (rooms.length === 0) {
@@ -64,6 +64,13 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
 
   // Récupérer les données de la chambre depuis Redux
   const room = rooms.find(r => r.id === chambreId)
+
+  // Ajuster le nombre de guests si > capacité de la chambre
+  useEffect(() => {
+    if (room && guests > room.capacite) {
+      setGuests(room.capacite)
+    }
+  }, [room, guests])
 
   if (loading || !room) {
     return (
@@ -99,8 +106,9 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
   // Prix de la chambre du backend (avec taxes incluses)
   const chambrePrixTotal = calculatedPrice?.totalPrice || (nights * chambre.prix)
 
-  // Pour l'affichage, on va juste ajouter les services
-  const servicesPrix = selectedServices.reduce((sum, s) => sum + s.prix, 0)
+  // Pour l'affichage, on va juste ajouter les services avec réduction de 10%
+  const servicesPrixOriginal = selectedServices.reduce((sum, s) => sum + (s.prixSelectionne || s.prix || 0), 0)
+  const servicesPrix = servicesPrixOriginal * 0.9  // 10% de réduction sur les services spa
   const subtotal = chambrePrixTotal + servicesPrix
   const tps = subtotal * 0.05  // TPS 5%
   const tvq = subtotal * 0.09975  // TVQ 9.975%

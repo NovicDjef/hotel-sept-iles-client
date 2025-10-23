@@ -7,7 +7,7 @@ import { Room, ApiRoom } from '@/types/room'
  * Récupère toutes les chambres (retourne le format API)
  */
 
-const hotelId = `cmggqdtba0000xxqtph1k8505`
+const hotelId = `cmh3iygew00009crzsls6rlzy`
 export const getAllChambres = () => {
   return apiService.get<ApiRoom[]>(`/api/v1/rooms/?hotelId=${hotelId}`)
 }

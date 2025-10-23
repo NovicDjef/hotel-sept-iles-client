@@ -312,20 +312,18 @@ export default function ServicesPage() {
   const forfaitsList = forfaits
   const certificatsList = certificats
 
-  // Catégories par défaut si l'API échoue
-  const defaultCategories = [
-    { id: 'tous', name: 'Tous', slug: 'tous', servicesCount: 0 },
-    { id: 'massage', name: 'Massage', slug: 'massage', servicesCount: 0 },
-    { id: 'spa', name: 'Spa', slug: 'spa', servicesCount: 0 },
-    { id: 'soins', name: 'Soins', slug: 'soins', servicesCount: 0 }
-  ]
-
-  // Utiliser les catégories de l'API ou les catégories par défaut
-  const displayCategories = categories.length > 0 ? categories : defaultCategories
-
   // Charger les données au montage du composant
   useEffect(() => {
-    dispatch(fetchAllSpaData())
+    const initAndFetchData = async () => {
+      // S'assurer qu'on a un token guest pour accéder aux APIs
+      const { ensureGuestAuth } = await import('@/services/auth/guestAuth')
+      await ensureGuestAuth()
+
+      // Charger les données spa (y compris les catégories)
+      dispatch(fetchAllSpaData())
+    }
+
+    initAndFetchData()
   }, [dispatch])
 
   return (
@@ -387,24 +385,39 @@ export default function ServicesPage() {
       {/* Filtres */}
       <section className="bg-white border-b border-neutral-200 sticky top-16 z-40">
         <div className="container-custom py-4">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {displayCategories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => dispatch(setCategory(cat.slug))}
-                className={`px-6 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                  filters.category === cat.slug
-                    ? 'bg-primary-600 text-white shadow-md'
-                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-                }`}
-              >
-                {cat.name}
-                {cat.servicesCount > 0 && (
-                  <span className="ml-2 text-xs opacity-75">({cat.servicesCount})</span>
-                )}
-              </button>
-            ))}
-          </div>
+          {/* Afficher les catégories seulement si elles sont chargées */}
+          {categories.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => dispatch(setCategory(cat.slug))}
+                  className={`px-6 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                    filters.category === cat.slug
+                      ? 'bg-primary-600 text-white shadow-md'
+                      : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  }`}
+                >
+                  {cat.name}
+                  {cat.servicesCount > 0 && (
+                    <span className="ml-2 text-xs opacity-75">({cat.servicesCount})</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Loading state pour les catégories */}
+          {loading && categories.length === 0 && (
+            <div className="flex gap-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="h-10 w-24 bg-neutral-200 rounded-full animate-pulse"
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

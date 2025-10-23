@@ -31,7 +31,12 @@ export function RecapitulatifReservation({
   // Calculer le prix de base (sans taxes) pour la simulation
   const prixParNuit = chambre.prix
   const totalBase = prixParNuit * nights
-  const totalBaseSpa = selectedServices.reduce((sum, s) => sum + s.prix, 0)
+
+  // Services spa avec réduction de 10%
+  const servicesPrixOriginal = selectedServices.reduce((sum, s) => sum + (s.prixSelectionne || s.prix || 0), 0)
+  const servicesReduction = servicesPrixOriginal * 0.10  // 10% de réduction
+  const totalBaseSpa = servicesPrixOriginal * 0.9  // Prix après réduction
+
   const taxesTPS = totalBase * 0.05
   const taxesTVQ = totalBase * 0.09975
   const taxesTPSspa = totalBaseSpa * 0.05
@@ -39,7 +44,7 @@ export function RecapitulatifReservation({
 
   const totalTaxes = taxesTPS + taxesTVQ + chambrePrixTotal
 
-  const servicesPrix = selectedServices.reduce((sum, s) => sum + s.prix, 0)
+  const servicesPrix = totalBaseSpa
 
   const prixTotal = taxesTPSspa + taxesTVQspa + servicesPrix
 
@@ -101,14 +106,24 @@ export function RecapitulatifReservation({
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="h-4 w-4 text-primary-600" />
             <span className="font-semibold text-neutral-900">Services spa</span>
+            <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold">
+              -10%
+            </span>
           </div>
           <div className="space-y-2">
-            {selectedServices.map((service, index) => (
-              <div key={index} className="flex items-center justify-between text-sm">
-                <span className="text-neutral-700">{service.nom}</span>
-                <span className="font-semibold text-neutral-900">{service.prix}$</span>
-              </div>
-            ))}
+            {selectedServices.map((service, index) => {
+              const prixOriginal = service.prixSelectionne || service.prix || 0
+              const prixReduit = prixOriginal * 0.9
+              return (
+                <div key={index} className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-700">{service.nom}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-neutral-400 line-through text-xs">{prixOriginal.toFixed(2)}$</span>
+                    <span className="font-semibold text-green-600">{prixReduit.toFixed(2)}$</span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -138,12 +153,28 @@ export function RecapitulatifReservation({
 
       {/* Promotions */}
       {selectedServices.length > 0 && (
-        <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-3">
-          <div className="flex items-center gap-2 text-green-700 text-sm">
-            <Tag className="h-4 w-4" />
-            <span className="font-semibold">
-              Économie de {Math.round(servicesPrix * 0.15)}$ sur les services
+        <div className="mt-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="bg-green-600 rounded-full p-1.5">
+              <Tag className="h-3 w-3 text-white" />
+            </div>
+            <span className="font-bold text-green-900 text-sm">
+              Réduction réservation de chambre
             </span>
+          </div>
+          <div className="space-y-1 text-xs">
+            <div className="flex justify-between text-green-700">
+              <span>Prix original services :</span>
+              <span className="line-through">{servicesPrixOriginal.toFixed(2)}$</span>
+            </div>
+            <div className="flex justify-between text-green-700 font-semibold">
+              <span>Réduction (-10%) :</span>
+              <span>-{servicesReduction.toFixed(2)}$</span>
+            </div>
+            <div className="flex justify-between text-green-900 font-bold text-sm pt-1">
+              <span>Économisez :</span>
+              <span>{servicesReduction.toFixed(2)}$</span>
+            </div>
           </div>
         </div>
       )}

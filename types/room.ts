@@ -9,12 +9,13 @@ export interface ApiRoom {
   type: string
   status: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'RESERVED'
   capacity: number
-  size: number
-  bedType: string
+  size: number | null
+  bedType: string | null
   description: string
   basePrice: number
   weekendPrice: number
-  amenities: Array<{ nom: string; disponible: boolean }> | null
+  // amenities est un objet avec des clés booléennes (ex: { "ac": true, "tv": true })
+  amenities: Record<string, boolean> | null
   caracteristiques: Array<{ label: string; valeur: string }> | null
   images: string[]
   createdAt: string
@@ -54,11 +55,30 @@ export function transformApiRoomToRoom(apiRoom: ApiRoom): Room {
     'TWIN': 'Standard',
   }
 
-  // Extraire les équipements depuis amenities
-  const equipements = apiRoom.amenities
-    ? apiRoom.amenities
-        .filter(a => a.disponible)
-        .map(a => a.nom)
+  // Map pour traduire les clés d'équipements en français
+  const amenitiesMap: Record<string, string> = {
+    'ac': 'Climatisation',
+    'tv': 'Télévision',
+    'wifi': 'Wi-Fi',
+    'minibar': 'Minibar',
+    'balcony': 'Balcon',
+    'jacuzzi': 'Jacuzzi',
+    'dining': 'Salle à manger',
+    'kitchen': 'Cuisine',
+    'safe': 'Coffre-fort',
+    'phone': 'Téléphone',
+    'hairdryer': 'Sèche-cheveux',
+    'bathtub': 'Baignoire',
+    'shower': 'Douche',
+    'desk': 'Bureau',
+    'sofa': 'Canapé',
+  }
+
+  // Extraire les équipements depuis amenities (format objet avec clés booléennes)
+  const equipements = apiRoom.amenities && typeof apiRoom.amenities === 'object'
+    ? Object.entries(apiRoom.amenities)
+        .filter(([_, value]) => value === true)
+        .map(([key, _]) => amenitiesMap[key] || key.charAt(0).toUpperCase() + key.slice(1))
     : []
 
   // Nom de la chambre
@@ -78,7 +98,7 @@ export function transformApiRoomToRoom(apiRoom: ApiRoom): Room {
     description: apiRoom.description || 'Chambre confortable et bien équipée',
     prix: apiRoom.basePrice,
     capacite: apiRoom.capacity,
-    superficie: apiRoom.size,
+    superficie: apiRoom.size || 25, // Valeur par défaut si null
     images: apiRoom.images && apiRoom.images.length > 0
       ? apiRoom.images
       : ['/images/chambres/0.webp'],
