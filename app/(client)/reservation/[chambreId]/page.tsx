@@ -23,15 +23,14 @@ import { ServicesSelector } from '@/components/reservation/ServicesSelector'
 import { RecapitulatifReservation } from '@/components/reservation/RecapitulatifReservation'
 import { FormulaireClient } from '@/components/reservation/FormulaireClient'
 import { StripePaymentForm } from '@/components/reservation/StripePaymentForm'
-import { generateReceiptPDF } from '@/utils/generateReceipt'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchRooms } from '@/store/slices/roomsSlice'
 import { getStripe } from '@/lib/stripe'
 import {
   calculateReservationPrice,
   createGuestReservation,
-  confirmReservationPayment,
-  createReservationWithPayment
+  addSpaServiceToReservation,
+  confirmReservationPayment
 } from '@/services/api/routeApi'
 
 export default function ReservationPage({ params }: { params: Promise<{ chambreId: string }> }) {
@@ -50,7 +49,7 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
   const [reservationId, setReservationId] = useState<string | null>(null)
   const [paymentProcessing, setPaymentProcessing] = useState(false)
   const [calculatedPrice, setCalculatedPrice] = useState<any>(null)
-  const [stripePromise] = useState(() => getStripe())
+  const [stripePromise] = useState(() => typeof window !== 'undefined' ? getStripe() : null)
 
   // Récupérer les paramètres de l'URL
   const [checkIn, setCheckIn] = useState(searchParams.get('checkIn') || '')
@@ -156,7 +155,14 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
             numberOfGuests: guests,
           })
 
-          console.log('✅ Prix calculé:', response.data.data)
+          console.log('✅ Prix calculé par le backend:', response.data.data)
+          console.log('📊 Détails du prix backend:', {
+            totalPrice: response.data.data.totalPrice,
+            numberOfNights: response.data.data.numberOfNights,
+            pricePerNight: response.data.data.pricePerNight,
+            taxes: response.data.data.taxes,
+            includesTaxes: response.data.data.includesTaxes
+          })
           setCalculatedPrice(response.data.data)
         } catch (error: any) {
           console.error('❌ Erreur lors du calcul du prix:', error)
@@ -186,8 +192,106 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
         }
       }
 
-      // ÉTAPE 2 : Validation des informations client (pas de création de réservation ici)
-      // La réservation sera créée après le paiement réussi
+      // ÉTAPE 2 : Créer la réservation avec statut PENDING
+      if (currentStep === 2 && clientInfo) {
+        try {
+          // Convertir les dates au format ISO complet
+          const checkInISO = new Date(checkIn).toISOString()
+          const checkOutISO = new Date(checkOut).toISOString()
+
+          // Construire l'objet de réservation
+          const reservationData = {
+            roomId: chambreId,
+            checkInDate: checkInISO,
+            checkOutDate: checkOutISO,
+            numberOfGuests: guests,
+            guest: {
+              firstName: clientInfo.prenom,
+              lastName: clientInfo.nom,
+              email: clientInfo.email,
+              phone: clientInfo.telephone,
+              ...(clientInfo.adresse && clientInfo.adresse.trim() && { address: clientInfo.adresse })
+            },
+            ...(clientInfo.commentaires && clientInfo.commentaires.trim() && { specialRequests: clientInfo.commentaires })
+          }
+
+          console.log('📝 Création réservation PENDING avec:', reservationData)
+          console.log('📋 JSON stringifié:', JSON.stringify(reservationData, null, 2))
+
+          // ÉTAPE 2.1 : Créer la réservation PENDING
+          const response = await createGuestReservation(reservationData)
+          console.log('✅ Réservation PENDING créée:', response.data.data)
+
+          // Extraire l'ID de la réservation
+          const responseData = response.data.data
+          const newReservationId = responseData.reservation?.id || responseData.id
+
+          if (!newReservationId) {
+            throw new Error('ID de réservation non trouvé dans la réponse')
+          }
+
+          setReservationId(newReservationId)
+          console.log('🔑 Reservation ID stocké:', newReservationId)
+
+          // ÉTAPE 2.2 : Ajouter les services spa à la réservation (si sélectionnés)
+          if (selectedServices.length > 0) {
+            console.log(`🧖 Ajout de ${selectedServices.length} service(s) spa à la réservation...`)
+            console.log('📋 Services sélectionnés:', selectedServices.map(s => ({
+              nom: s.nom,
+              prix: s.prixSelectionne || s.prix,
+              prixAvecReduc: (s.prixSelectionne || s.prix) * 0.9,
+              duree: s.dureeSelectionnee,
+              personnes: s.nombrePersonnes
+            })))
+
+            for (const service of selectedServices) {
+              try {
+                const spaServiceData = {
+                  spaServiceId: service.id,
+                  duree: service.dureeSelectionnee,
+                  nombrePersonnes: service.nombrePersonnes || 1,
+                  date: service.date || checkIn,  // Format YYYY-MM-DD
+                  heure: service.heure || '10:00',  // Format HH:mm
+                }
+
+                console.log('➕ Ajout service spa:', spaServiceData)
+
+                const spaResponse = await addSpaServiceToReservation(newReservationId, spaServiceData)
+                console.log('✅ Service spa ajouté:', spaResponse.data.data)
+              } catch (spaError: any) {
+                console.error('❌ Erreur ajout service spa:', spaError.response?.data)
+                // Continuer même si un service échoue
+              }
+            }
+
+            console.log('✅ Tous les services spa ont été traités')
+          }
+        } catch (error: any) {
+          console.error('❌ Erreur lors de la création de la réservation:', error)
+          console.error('📋 Détails de l\'erreur:', error.response?.data)
+          console.error('🔍 Détails de validation:', JSON.stringify(error.response?.data?.error, null, 2))
+
+          // Afficher les erreurs de validation de manière détaillée
+          let errorMessage = 'Erreur lors de la création de la réservation'
+
+          if (error.response?.data?.error) {
+            const validationErrors = error.response.data.error
+            if (typeof validationErrors === 'object') {
+              errorMessage = 'Erreurs de validation:\n' +
+                Object.entries(validationErrors)
+                  .map(([field, msg]) => `- ${field}: ${msg}`)
+                  .join('\n')
+            } else {
+              errorMessage = validationErrors.toString()
+            }
+          } else if (error.response?.data?.message) {
+            errorMessage = error.response.data.message
+          }
+
+          alert(errorMessage)
+          return
+        }
+      }
 
       setCurrentStep(currentStep + 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -201,59 +305,32 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
     }
   }
 
-  // ÉTAPE 3 : Gérer le paiement Stripe et créer la réservation
+  // ÉTAPE 3 : Confirmer le paiement de la réservation PENDING
   const handlePaymentSuccess = async (paymentMethodId: string) => {
-    if (!clientInfo) {
-      alert('Erreur: Informations client manquantes')
+    if (!reservationId) {
+      alert('Erreur: ID de réservation manquant')
       return
     }
 
     setPaymentProcessing(true)
     try {
-      // Convertir les dates au format ISO
-      const checkInISO = new Date(checkIn).toISOString()
-      const checkOutISO = new Date(checkOut).toISOString()
+      console.log('💳 Confirmation du paiement pour réservation:', reservationId)
+      console.log('💰 Montant total avec taxes:', total)
 
-      // Préparer les services spa
-      const spaServices = selectedServices.map(service => ({
-        serviceId: service.id,
-        scheduledDate: service.date || checkIn,
-        scheduledTime: service.heure || '10:00'
-      }))
-
-      console.log('💳 Création réservation avec paiement:', {
-        roomId: chambreId,
-        checkInDate: checkInISO,
-        checkOutDate: checkOutISO,
-        numberOfGuests: guests,
-        firstName: clientInfo.prenom,
-        lastName: clientInfo.nom,
-        email: clientInfo.email,
-        phone: clientInfo.telephone,
-        spaServices: spaServices.length > 0 ? spaServices : undefined,
-      })
-
-      // Créer la réservation avec le paiement en une seule étape
-      const response = await createReservationWithPayment({
-        roomId: chambreId,
-        checkInDate: checkInISO,
-        checkOutDate: checkOutISO,
-        numberOfGuests: guests,
-        firstName: clientInfo.prenom,
-        lastName: clientInfo.nom,
-        email: clientInfo.email,
-        phone: clientInfo.telephone,
-        address: clientInfo.adresse,
-        specialRequests: clientInfo.commentaires,
+      // Confirmer le paiement de la réservation existante
+      const response = await confirmReservationPayment(reservationId, {
         paymentMethodId,
-        spaServices: spaServices.length > 0 ? spaServices : undefined,
+        amount: total,  // Inclure le montant total avec taxes
       })
 
       const confirmedReservation = response.data.data
+      console.log('✅ Paiement confirmé, réservation:', confirmedReservation)
+      console.log('🔍 Structure de la réservation confirmée:', Object.keys(confirmedReservation))
+      console.log('📋 reservationNumber:', confirmedReservation.reservationNumber)
 
       // Générer le reçu PDF
       const receiptData = {
-        reservationNumber: confirmedReservation.reservationNumber,
+        reservationNumber: confirmedReservation.reservationNumber || confirmedReservation.id || 'N/A',
         date: new Date().toLocaleDateString('fr-CA'),
         chambre: {
           nom: chambre.nom,
@@ -273,8 +350,12 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
         },
         services: selectedServices.map(s => ({
           nom: s.nom,
-          prix: s.prix,
+          prix: (s.prixSelectionne || s.prix || 0) * 0.9,  // Prix avec réduction de 10%
+          prixOriginal: s.prixSelectionne || s.prix || 0,  // Prix original pour référence
+          duree: s.dureeSelectionnee,
+          nombrePersonnes: s.nombrePersonnes || 1,
           date: s.date,
+          heure: s.heure,
         })),
         subtotal,
         tps,
@@ -282,11 +363,28 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
         total,
       }
 
-      generateReceiptPDF(receiptData)
+      // Télécharger le reçu PDF
+      console.log('📄 Génération du reçu PDF...')
+      try {
+        // Import dynamique pour éviter les erreurs SSR
+        const { generateReceiptPDF } = await import('@/utils/generateReceipt')
+        await generateReceiptPDF(receiptData)
+        console.log('✅ Reçu PDF généré avec succès')
+      } catch (pdfError) {
+        console.error('❌ Erreur lors de la génération du PDF:', pdfError)
+      }
 
-      // Rediriger vers la page de confirmation
-      alert('Paiement confirmé ! Votre reçu a été téléchargé.')
-      router.push(`/reservation/confirmation/${confirmedReservation.id}`)
+      // Afficher un message de succès
+      const resNumber = confirmedReservation.reservationNumber || confirmedReservation.id || 'inconnu'
+      console.log('💬 Affichage du message de succès...')
+      alert(`✅ Paiement confirmé avec succès !\n\n📄 Votre reçu (N° ${resNumber}) a été téléchargé.\n\n🏠 Redirection vers l'accueil dans quelques instants...`)
+
+      // Attendre 2 secondes puis rediriger vers l'accueil
+      console.log('🔄 Préparation de la redirection...')
+      setTimeout(() => {
+        console.log('🏠 Redirection vers l\'accueil')
+        router.push('/')
+      }, 2000)
     } catch (error: any) {
       console.error('Erreur lors de la confirmation du paiement:', error)
       alert(error.response?.data?.message || 'Erreur lors du paiement')

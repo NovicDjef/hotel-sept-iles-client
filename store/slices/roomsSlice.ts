@@ -13,6 +13,8 @@ interface RoomsState {
     maxPrice: number
     capacity: number
     available: boolean | null
+    checkIn: string
+    checkOut: string
   }
 }
 
@@ -27,6 +29,8 @@ const initialState: RoomsState = {
     maxPrice: 500,
     capacity: 1,
     available: null,
+    checkIn: '',
+    checkOut: '',
   }
 }
 
@@ -117,6 +121,13 @@ const roomsSlice = createSlice({
       applyFilters(state)
     },
 
+    // Définir les dates de réservation
+    setDates: (state, action: PayloadAction<{ checkIn: string; checkOut: string }>) => {
+      state.filters.checkIn = action.payload.checkIn
+      state.filters.checkOut = action.payload.checkOut
+      // Ne pas appliquer les filtres ici car les dates sont juste pour l'API de disponibilité
+    },
+
     // Réinitialiser les filtres
     resetFilters: (state) => {
       state.filters = initialState.filters
@@ -190,6 +201,7 @@ export const {
   setPriceRange,
   setCapacity,
   setAvailability,
+  setDates,
   resetFilters,
   updateRoomAvailability,
 } = roomsSlice.actions

@@ -46,6 +46,22 @@ export const filterChambres = (params: {
 // ==================== RÉSERVATIONS ====================
 
 /**
+ * Vérifier la disponibilité des chambres par type pour une période donnée
+ */
+export const checkRoomsAvailability = (data: {
+  checkInDate: string  // Format: YYYY-MM-DD
+  checkOutDate: string  // Format: YYYY-MM-DD
+  hotelId?: string
+}) => {
+  const params = {
+    hotelId: data.hotelId || hotelId,
+    checkInDate: data.checkInDate,
+    checkOutDate: data.checkOutDate
+  }
+  return apiService.get('/api/v1/reservations/availability', { params })
+}
+
+/**
  * ÉTAPE 1 : Calcul du prix et vérification de disponibilité
  */
 export const calculateReservationPrice = (data: {
@@ -73,12 +89,14 @@ export const createGuestReservation = (data: {
   checkOutDate: string
   numberOfGuests: number
 
-  // Informations client
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  address?: string
+  // Informations client (dans un objet guest)
+  guest: {
+    firstName: string
+    lastName: string
+    email: string
+    phone: string
+    address?: string
+  }
 
   // Options
   specialRequests?: string
@@ -93,50 +111,27 @@ export const createGuestReservation = (data: {
 }
 
 /**
+ * Ajouter un service spa à une réservation existante
+ */
+export const addSpaServiceToReservation = (reservationId: string, data: {
+  spaServiceId: string
+  duree: number
+  nombrePersonnes: number
+  date: string  // Format: YYYY-MM-DD
+  heure: string  // Format: HH:mm
+  notes?: string
+}) => {
+  return apiService.post(`/api/v1/reservations/${reservationId}/spa-services`, data)
+}
+
+/**
  * ÉTAPE 3 : Confirmation du paiement Stripe
  */
 export const confirmReservationPayment = (reservationId: string, data: {
   paymentMethodId: string
+  amount?: number  // Montant total avec taxes (optionnel selon le backend)
 }) => {
   return apiService.post(`/api/v1/reservations/${reservationId}/confirm-payment`, data)
-}
-
-/**
- * Créer une réservation avec paiement direct (en une seule étape)
- */
-export const createReservationWithPayment = (data: {
-  // Informations chambre et dates
-  roomId: string
-  checkInDate: string
-  checkOutDate: string
-  numberOfGuests: number
-
-  // Informations client
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  address?: string
-
-  // Paiement
-  paymentMethodId: string
-
-  // Services spa (optionnel)
-  spaServices?: Array<{
-    serviceId: string
-    scheduledDate: string
-    scheduledTime: string
-  }>
-
-  // Options
-  specialRequests?: string
-  hotelId?: string
-}) => {
-  const requestData = {
-    ...data,
-    hotelId: data.hotelId || hotelId
-  }
-  return apiService.post('/api/v1/reservations/guest-with-payment', requestData)
 }
 
 /**
@@ -144,6 +139,50 @@ export const createReservationWithPayment = (data: {
  */
 export const getUserReservations = () => {
   return apiService.get('/reservations/user')
+}
+
+/**
+ * AVIS / REVIEWS
+ */
+
+/**
+ * Récupère tous les avis d'un hôtel (PUBLIC)
+ */
+export const getHotelReviews = (hotelId: string) => {
+  return apiService.get(`/api/v1/reviews/hotel/${hotelId}`)
+}
+
+/**
+ * Récupère les statistiques des avis d'un hôtel (PUBLIC)
+ */
+export const getHotelReviewsStats = (hotelId: string) => {
+  return apiService.get(`/api/v1/reviews/hotel/${hotelId}/stats`)
+}
+
+/**
+ * Créer un avis (AUTHENTIFIÉ)
+ */
+export const createReview = (data: {
+  hotelId: string
+  roomName?: string
+  stayDate?: string
+  overallRating: number
+  cleanlinessRating?: number
+  serviceRating?: number
+  locationRating?: number
+  valueRating?: number
+  title: string
+  comment: string
+  photos?: string[]
+}) => {
+  return apiService.post('/api/v1/reviews', data)
+}
+
+/**
+ * Marquer un avis comme utile (AUTHENTIFIÉ)
+ */
+export const markReviewAsHelpful = (reviewId: string) => {
+  return apiService.post(`/api/v1/reviews/${reviewId}/helpful`)
 }
 
 /**

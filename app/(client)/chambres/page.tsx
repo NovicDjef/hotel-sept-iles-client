@@ -24,6 +24,7 @@ import { FilterSidebar } from '@/components/chambres/FilterSidebar'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchRooms } from '@/store/slices/roomsSlice'
 import { MaintenanceMessage } from '@/components/common/MaintenanceMessage'
+import { checkRoomsAvailability } from '@/services/api/routeApi'
 
 const categories = ['Toutes', 'Premium', 'Standard', 'Famille', 'Business']
 
@@ -34,14 +35,45 @@ export default function ChambresPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('Toutes')
   const [sortBy, setSortBy] = useState('recommande')
+  const [availability, setAvailability] = useState<any[]>([])
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
 
   useEffect(() => {
     dispatch(fetchRooms())
   }, [dispatch])
 
+  // Charger la disponibilité quand les filtres de dates changent
+  useEffect(() => {
+    const loadAvailability = async () => {
+      if (filters.checkIn && filters.checkOut) {
+        setAvailabilityLoading(true)
+        try {
+          const response = await checkRoomsAvailability({
+            checkInDate: filters.checkIn,
+            checkOutDate: filters.checkOut
+          })
+          console.log('✅ Disponibilité chargée:', response.data.data)
+          setAvailability(response.data.data)
+        } catch (err) {
+          console.error('❌ Erreur chargement disponibilité:', err)
+          setAvailability([])
+        } finally {
+          setAvailabilityLoading(false)
+        }
+      }
+    }
+
+    loadAvailability()
+  }, [filters.checkIn, filters.checkOut])
+
   const filteredChambres = filteredRooms.filter(chambre =>
     selectedCategory === 'Toutes' || chambre.categorie === selectedCategory
   )
+
+  // Helper pour obtenir la disponibilité d'un type de chambre
+  const getAvailabilityForRoom = (roomType: string) => {
+    return availability.find(avail => avail.type === roomType)
+  }
 
   return (
     <div className="min-h-screen pt-20">
@@ -215,17 +247,47 @@ export default function ChambresPage() {
                         className="object-cover transition-transform duration-700 group-hover:scale-110"
                       />
 
-                      {/* Badge disponibilité */}
+                      {/* Badge disponibilité avec données temps réel */}
                       <div className="absolute top-4 left-4">
-                        {chambre.disponible ? (
-                          <span className="badge-success backdrop-blur-md">
-                            Disponible
-                          </span>
-                        ) : (
-                          <span className="badge bg-red-500 text-white backdrop-blur-md">
-                            Complet
-                          </span>
-                        )}
+                        {(() => {
+                          const avail = getAvailabilityForRoom(chambre.type)
+                          if (!avail || availabilityLoading) {
+                            // Fallback sur les données statiques
+                            return chambre.disponible ? (
+                              <span className="badge-success backdrop-blur-md">
+                                Disponible
+                              </span>
+                            ) : (
+                              <span className="badge bg-red-500 text-white backdrop-blur-md">
+                                Complet
+                              </span>
+                            )
+                          }
+
+                          // Données temps réel de l'API
+                          if (!avail.isAvailable) {
+                            return (
+                              <span className="badge bg-red-500 text-white backdrop-blur-md">
+                                ❌ Complet
+                              </span>
+                            )
+                          }
+
+                          // Alerte si moins de 5 chambres disponibles
+                          if (avail.availableRooms <= 5) {
+                            return (
+                              <span className="badge bg-orange-500 text-white backdrop-blur-md animate-pulse">
+                                ⚠️ Plus que {avail.availableRooms} {avail.availableRooms > 1 ? 'chambres' : 'chambre'}
+                              </span>
+                            )
+                          }
+
+                          return (
+                            <span className="badge-success backdrop-blur-md">
+                              ✓ {avail.availableRooms} disponibles
+                            </span>
+                          )
+                        })()}
                       </div>
 
                       {/* Badge catégorie */}
@@ -295,6 +357,43 @@ export default function ChambresPage() {
                         </div>
                       </div>
 
+                      {/* Indicateur de popularité / Taux d'occupation */}
+                      {(() => {
+                        const avail = getAvailabilityForRoom(chambre.type)
+                        if (avail && filters.checkIn && filters.checkOut) {
+                          const occupancy = parseFloat(avail.occupancyRate)
+                          let colorClass = 'bg-green-500'
+                          let textClass = 'text-green-700'
+                          let message = 'Bonne disponibilité'
+
+                          if (occupancy >= 80) {
+                            colorClass = 'bg-red-500'
+                            textClass = 'text-red-700'
+                            message = 'Très demandé'
+                          } else if (occupancy >= 60) {
+                            colorClass = 'bg-orange-500'
+                            textClass = 'text-orange-700'
+                            message = 'Populaire'
+                          }
+
+                          return (
+                            <div className="mb-4">
+                              <div className="flex items-center justify-between text-xs mb-1.5">
+                                <span className={`font-medium ${textClass}`}>{message}</span>
+                                <span className="text-neutral-500">{occupancy}% occupé</span>
+                              </div>
+                              <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${colorClass} transition-all duration-500`}
+                                  style={{ width: `${occupancy}%` }}
+                                />
+                              </div>
+                            </div>
+                          )
+                        }
+                        return null
+                      })()}
+
                       {/* Équipements */}
                       <div className="mb-4">
                         <div className="grid grid-cols-3 gap-2">
@@ -324,17 +423,25 @@ export default function ChambresPage() {
                           <Eye className="h-4 w-4" />
                           Voir les détails
                         </Link>
-                        <Link
-                          href={`/reservation/${chambre.id}`}
-                          className={`btn-primary flex-1 justify-center group/btn ${
-                            !chambre.disponible ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
-                          onClick={(e) => !chambre.disponible && e.preventDefault()}
-                        >
-                          <Calendar className="h-4 w-4" />
-                          Réserver
-                          <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-                        </Link>
+                        {(() => {
+                          // Utiliser les données temps réel si disponibles
+                          const avail = getAvailabilityForRoom(chambre.type)
+                          const isAvailable = avail ? avail.isAvailable : chambre.disponible
+
+                          return (
+                            <Link
+                              href={`/reservation/${chambre.id}`}
+                              className={`btn-primary flex-1 justify-center group/btn ${
+                                !isAvailable ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                              onClick={(e) => !isAvailable && e.preventDefault()}
+                            >
+                              <Calendar className="h-4 w-4" />
+                              Réserver
+                              <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                            </Link>
+                          )
+                        })()}
                       </div>
                     </div>
                   </motion.div>

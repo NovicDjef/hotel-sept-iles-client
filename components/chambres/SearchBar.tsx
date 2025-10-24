@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Calendar, Users, Search } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAppDispatch } from '@/store/hooks'
-import { setCapacity } from '@/store/slices/roomsSlice'
+import { setCapacity, setDates } from '@/store/slices/roomsSlice'
 
 interface SearchBarProps {
   onSearch?: (filters: { checkIn: string; checkOut: string; guests: number }) => void
@@ -33,6 +33,9 @@ export function SearchBar({ onSearch }: SearchBarProps) {
 
   const handleCheckInChange = (value: string) => {
     setCheckIn(value)
+    if (value && checkOut) {
+      dispatch(setDates({ checkIn: value, checkOut }))
+    }
     if (onSearch && value && checkOut) {
       onSearch({ checkIn: value, checkOut, guests })
     }
@@ -40,6 +43,9 @@ export function SearchBar({ onSearch }: SearchBarProps) {
 
   const handleCheckOutChange = (value: string) => {
     setCheckOut(value)
+    if (checkIn && value) {
+      dispatch(setDates({ checkIn, checkOut: value }))
+    }
     if (onSearch && checkIn && value) {
       onSearch({ checkIn, checkOut: value, guests })
     }

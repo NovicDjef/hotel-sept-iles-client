@@ -54,7 +54,8 @@ export function ServicesSelector({
         dureeSelectionnee: premiereduree,
         prixSelectionne: prix,
         date: checkIn,
-        heure: '10:00'
+        heure: '10:00',
+        nombrePersonnes: 1  // Par défaut 1 personne
       }])
     }
   }
@@ -218,41 +219,67 @@ export function ServicesSelector({
                   exit={{ height: 0, opacity: 0 }}
                   className="border-t border-primary-200 bg-primary-50/50 p-4"
                 >
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1">
-                        Date
-                      </label>
-                      <input
-                        type="date"
-                        min={checkIn}
-                        max={checkOut}
-                        className="input-custom text-sm"
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          const updated = selectedServices.map(s =>
-                            s.id === service.id ? { ...s, date: e.target.value } : s
-                          )
-                          onServicesChange(updated)
-                        }}
-                      />
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-neutral-700 mb-1">
+                          Date
+                        </label>
+                        <input
+                          type="date"
+                          min={checkIn}
+                          max={checkOut}
+                          value={selectedServices.find(s => s.id === service.id)?.date || checkIn}
+                          className="input-custom text-sm"
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            const updated = selectedServices.map(s =>
+                              s.id === service.id ? { ...s, date: e.target.value } : s
+                            )
+                            onServicesChange(updated)
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-neutral-700 mb-1">
+                          Heure
+                        </label>
+                        <select
+                          className="input-custom text-sm"
+                          value={selectedServices.find(s => s.id === service.id)?.heure || '10:00'}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            const updated = selectedServices.map(s =>
+                              s.id === service.id ? { ...s, heure: e.target.value } : s
+                            )
+                            onServicesChange(updated)
+                          }}
+                        >
+                          {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'].map(h => (
+                            <option key={h} value={h}>{h}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
+
+                    {/* Nombre de personnes */}
                     <div>
                       <label className="block text-xs font-medium text-neutral-700 mb-1">
-                        Heure
+                        Nombre de personnes
                       </label>
                       <select
                         className="input-custom text-sm"
+                        value={selectedServices.find(s => s.id === service.id)?.nombrePersonnes || 1}
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => {
                           const updated = selectedServices.map(s =>
-                            s.id === service.id ? { ...s, heure: e.target.value } : s
+                            s.id === service.id ? { ...s, nombrePersonnes: parseInt(e.target.value) } : s
                           )
                           onServicesChange(updated)
                         }}
                       >
-                        {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'].map(h => (
-                          <option key={h} value={h}>{h}</option>
+                        {[1, 2, 3, 4].map(n => (
+                          <option key={n} value={n}>{n} personne{n > 1 ? 's' : ''}</option>
                         ))}
                       </select>
                     </div>

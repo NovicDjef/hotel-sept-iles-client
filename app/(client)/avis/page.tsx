@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Star, MessageSquarePlus, Users as UsersIcon } from 'lucide-react'
+import { Star, MessageSquarePlus, Users as UsersIcon, Loader2 } from 'lucide-react'
 import { AvisList } from '@/components/avis/AvisList'
 import { AvisForm } from '@/components/avis/AvisForm'
 import { AvisData } from '@/components/avis/AvisCard'
+import { getHotelReviews, getHotelReviewsStats } from '@/services/api/routeApi'
+import { hotelId } from '@/services/api/Api'
 
 const avisInitiaux: AvisData[] = [
   {
@@ -94,20 +96,85 @@ const avisInitiaux: AvisData[] = [
   }
 ]
 
-export default function AvisPage() {
-  const [avis, setAvis] = useState<AvisData[]>(avisInitiaux)
-  const [showForm, setShowForm] = useState(false)
+// Fonction pour transformer les avis de l'API vers le format AvisData
+const transformApiReview = (apiReview: any): AvisData => {
+  // Extraire les photos (string CSV vers array)
+  const photos = apiReview.photos ? apiReview.photos.split(',').map((p: string) => p.trim()) : []
 
-  const notesMoyenne = 4.9
-  const totalAvis = 847
-
-  const distribution = {
-    5: 85,
-    4: 10,
-    3: 3,
-    2: 1,
-    1: 1
+  return {
+    id: apiReview.id,
+    auteur: `${apiReview.guest?.firstName || 'Anonyme'} ${apiReview.guest?.lastName || ''}`.trim(),
+    avatar: apiReview.guest?.avatar || '/images/avatars/default.svg',
+    note: apiReview.overallRating,
+    date: new Date(apiReview.createdAt).toISOString().split('T')[0], // Format YYYY-MM-DD
+    sejour: apiReview.stayDate || 'Date inconnue',
+    chambre: apiReview.roomName || 'Chambre',
+    titre: apiReview.title,
+    commentaire: apiReview.comment,
+    photos: photos,
+    utile: apiReview.helpfulCount || 0,
+    reponseHotel: apiReview.hotelResponse || null
   }
+}
+
+export default function AvisPage() {
+  const [avis, setAvis] = useState<AvisData[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const [notesMoyenne, setNotesMoyenne] = useState(0)
+  const [totalAvis, setTotalAvis] = useState(0)
+  const [distribution, setDistribution] = useState({
+    5: 0,
+    4: 0,
+    3: 0,
+    2: 0,
+    1: 0
+  })
+
+  // Charger les avis au montage
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setLoading(true)
+        console.log('🔍 Chargement des avis pour l\'hôtel:', hotelId)
+
+        // Charger les avis et les stats en parallèle
+        const [reviewsResponse, statsResponse] = await Promise.all([
+          getHotelReviews(hotelId),
+          getHotelReviewsStats(hotelId)
+        ])
+
+        console.log('✅ Avis reçus:', reviewsResponse.data)
+        console.log('📊 Stats reçues:', statsResponse.data)
+
+        // Transformer les avis
+        const transformedReviews = reviewsResponse.data.data.map(transformApiReview)
+        setAvis(transformedReviews)
+
+        // Mettre à jour les stats
+        const stats = statsResponse.data.data
+        setNotesMoyenne(stats.averageRating || 0)
+        setTotalAvis(stats.totalReviews || 0)
+        setDistribution(stats.ratingDistribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 })
+
+        setError(null)
+      } catch (err: any) {
+        console.error('❌ Erreur chargement avis:', err)
+        setError('Impossible de charger les avis')
+        // Garder les données initiales en cas d'erreur
+        setAvis(avisInitiaux)
+        setNotesMoyenne(4.9)
+        setTotalAvis(847)
+        setDistribution({ 5: 85, 4: 10, 3: 3, 2: 1, 1: 1 })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchReviews()
+  }, [])
 
   const handleNewAvis = (newAvis: AvisData) => {
     setAvis([newAvis, ...avis])
@@ -116,8 +183,28 @@ export default function AvisPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // État de chargement
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-16 bg-neutral-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary-600 mx-auto mb-4" />
+          <p className="text-neutral-600">Chargement des avis...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen pt-16 bg-neutral-50">
+      {/* Afficher un message d'erreur si nécessaire */}
+      {error && (
+        <div className="bg-yellow-50 border-b border-yellow-200 p-4">
+          <div className="container-custom">
+            <p className="text-yellow-800 text-sm">⚠️ {error} - Affichage des données d'exemple</p>
+          </div>
+        </div>
+      )}
       {/* Hero */}
       <section className="relative bg-gradient-luxury text-white py-20 overflow-hidden">
         {/* Decorative elements */}

@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { jsPDF } from 'jspdf'
 
 interface ReservationData {
   reservationNumber: string
@@ -22,8 +21,12 @@ interface ReservationData {
   }
   services?: Array<{
     nom: string
-    prix: number
+    prix: number  // Prix avec réduction (10% off)
+    prixOriginal?: number  // Prix original avant réduction
+    duree?: number  // Durée en minutes
+    nombrePersonnes?: number  // Nombre de personnes
     date?: string
+    heure?: string
   }>
   subtotal: number
   tps: number
@@ -31,7 +34,14 @@ interface ReservationData {
   total: number
 }
 
-export const generateReceiptPDF = (data: ReservationData) => {
+export const generateReceiptPDF = async (data: ReservationData) => {
+  // Import dynamique de jsPDF pour éviter les erreurs SSR
+  if (typeof window === 'undefined') {
+    console.warn('generateReceiptPDF appelé côté serveur, ignoré')
+    return
+  }
+
+  const { jsPDF } = await import('jspdf')
   const doc = new jsPDF()
 
   // Couleurs élégantes de l'hôtel
@@ -296,7 +306,7 @@ export const generateReceiptPDF = (data: ReservationData) => {
 
   // === SERVICES ADDITIONNELS (STYLE PREMIUM) ===
   if (data.services && data.services.length > 0) {
-    const servicesHeight = 18 + (data.services.length * 8) + 5
+    const servicesHeight = 18 + (data.services.length * 13) + 5  // Augmenté de 8 à 13 pour les détails supplémentaires
 
     // Vérifier si on a besoin d'une nouvelle page pour les services
     yPos = checkPageBreak(yPos, servicesHeight)
@@ -333,15 +343,44 @@ export const generateReceiptPDF = (data: ReservationData) => {
       // Alternance de fond subtile
       if (index % 2 === 0) {
         doc.setFillColor(255, 255, 255)
-        doc.roundedRect(23, yPos - 2, pageWidth - 46, 7, 1, 1, 'F')
+        doc.roundedRect(23, yPos - 2, pageWidth - 46, 12, 1, 1, 'F')
       }
 
+      // Nom du service
       doc.setTextColor(...darkGray)
+      doc.setFont('helvetica', 'bold')
       doc.text(`- ${service.nom}`, 26, yPos)
+
+      // Prix avec réduction
       doc.setTextColor(...goldColor)
       doc.setFont('helvetica', 'bold')
       doc.text(`${service.prix.toFixed(2)} $ CAD`, pageWidth - 26, yPos, { align: 'right' })
+
+      yPos += 5
+
+      // Détails supplémentaires (durée, personnes, date/heure)
       doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7)
+      doc.setTextColor(...mediumGray)
+
+      let details = []
+      if (service.duree) details.push(`${service.duree} min`)
+      if (service.nombrePersonnes) details.push(`${service.nombrePersonnes} pers.`)
+      if (service.date) details.push(new Date(service.date).toLocaleDateString('fr-CA'))
+      if (service.heure) details.push(service.heure)
+
+      if (details.length > 0) {
+        doc.text(`  ${details.join(' • ')}`, 28, yPos)
+      }
+
+      // Afficher l'économie si prix original disponible
+      if (service.prixOriginal && service.prixOriginal > service.prix) {
+        const savings = service.prixOriginal - service.prix
+        doc.setTextColor(34, 197, 94) // Vert pour l'économie
+        doc.text(`(-10% = ${savings.toFixed(2)} $ economise)`, pageWidth - 26, yPos, { align: 'right' })
+      }
+
+      doc.setFontSize(9)
       yPos += 8
     })
 
