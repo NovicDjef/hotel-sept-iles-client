@@ -70,6 +70,11 @@ export default function ChambresPage() {
     selectedCategory === 'Toutes' || chambre.categorie === selectedCategory
   )
 
+  // Debug logs
+  console.log('🏨 Total chambres Redux (filteredRooms):', filteredRooms.length, filteredRooms)
+  console.log('🔍 Catégorie sélectionnée:', selectedCategory)
+  console.log('✅ Chambres après filtre catégorie:', filteredChambres.length, filteredChambres)
+
   // Helper pour obtenir la disponibilité d'un type de chambre
   const getAvailabilityForRoom = (roomType: string) => {
     return availability.find(avail => avail.type === roomType)
@@ -290,10 +295,28 @@ export default function ChambresPage() {
                         })()}
                       </div>
 
-                      {/* Badge catégorie */}
+                      {/* Badge type de chambre */}
                       <div className="absolute top-4 right-4">
-                        <span className="badge-gold backdrop-blur-md">
-                          {chambre.categorie}
+                        <span className={`badge backdrop-blur-md font-semibold ${
+                          chambre.type === 'SUITE' || chambre.type === 'PRESIDENTIAL'
+                            ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 text-white shadow-lg'
+                            : chambre.type === 'DELUXE'
+                            ? 'bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 text-white shadow-lg'
+                            : chambre.type === 'CONDO'
+                            ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white shadow-lg'
+                            : chambre.type === 'FAMILY'
+                            ? 'bg-gradient-to-r from-green-600 via-lime-600 to-emerald-500 text-white shadow-lg'
+                            : chambre.type === 'EXECUTIVE'
+                            ? 'bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 text-white shadow-lg'
+                            : chambre.type === 'DOUBLE'
+                            ? 'bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 text-white shadow-md'
+                            : chambre.type === 'TWIN'
+                            ? 'bg-gradient-to-r from-cyan-500 via-teal-500 to-blue-500 text-white shadow-md'
+                            : chambre.type === 'SIMPLE' || chambre.type === 'STANDARD'
+                            ? 'bg-gradient-to-r from-slate-600 via-gray-600 to-zinc-600 text-white shadow-md'
+                            : 'bg-gradient-to-r from-neutral-600 to-gray-600 text-white shadow-md'
+                        }`}>
+                          {chambre.type}
                         </span>
                       </div>
 
@@ -304,6 +327,11 @@ export default function ChambresPage() {
                           {chambre.prix}$
                           <span className="text-sm font-normal text-neutral-500">/nuit</span>
                         </div>
+                        {chambre.prixWeekend !== chambre.prix && (
+                          <div className="text-[10px] text-amber-600 font-semibold mt-0.5">
+                            {chambre.prixWeekend}$ weekend
+                          </div>
+                        )}
                       </div>
 
                       {/* Indicateur images */}

@@ -140,11 +140,29 @@ export function FeaturedRooms() {
                     )}
                   </div>
 
-                  {/* Badge catégorie */}
+                  {/* Badge type de chambre (roomType) */}
                   <div className="absolute top-3 right-3 z-20">
-                    <span className="inline-flex items-center gap-1 bg-amber-400 text-neutral-900 px-3 py-1.5 rounded-full text-[11px] font-bold shadow-lg">
+                    <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold shadow-lg backdrop-blur-sm ${
+                      room.type === 'SUITE' || room.type === 'PRESIDENTIAL'
+                        ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 text-white'
+                        : room.type === 'DELUXE'
+                        ? 'bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 text-white'
+                        : room.type === 'CONDO'
+                        ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white'
+                        : room.type === 'FAMILY'
+                        ? 'bg-gradient-to-r from-green-600 via-lime-600 to-emerald-500 text-white'
+                        : room.type === 'EXECUTIVE'
+                        ? 'bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 text-white'
+                        : room.type === 'DOUBLE'
+                        ? 'bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 text-white'
+                        : room.type === 'TWIN'
+                        ? 'bg-gradient-to-r from-cyan-500 via-teal-500 to-blue-500 text-white'
+                        : room.type === 'SIMPLE' || room.type === 'STANDARD'
+                        ? 'bg-gradient-to-r from-slate-600 via-gray-600 to-zinc-600 text-white'
+                        : 'bg-gradient-to-r from-neutral-600 to-gray-600 text-white'
+                    }`}>
                       <Award className="h-3 w-3" />
-                      {room.categorie}
+                      {room.type}
                     </span>
                   </div>
 
@@ -155,6 +173,11 @@ export function FeaturedRooms() {
                       {room.prix}
                       <span className="text-xs font-medium text-neutral-500">$/nuit</span>
                     </div>
+                    {room.prixWeekend !== room.prix && (
+                      <div className="text-[9px] text-amber-600 font-bold mt-0.5">
+                        {room.prixWeekend}$ weekend
+                      </div>
+                    )}
                   </div>
 
                   {/* Indicateur images */}

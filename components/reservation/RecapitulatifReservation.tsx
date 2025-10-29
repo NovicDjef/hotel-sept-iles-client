@@ -3,6 +3,13 @@
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Calendar, Users, Clock, Tag, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import {
+  calculateTotalPrice,
+  parseDateISO,
+  countWeekendNights
+} from '@/utils/priceCalculator'
 
 interface RecapitulatifReservationProps {
   chambre: any
@@ -25,12 +32,24 @@ export function RecapitulatifReservation({
   tvq,
   chambrePrix: backendChambrePrixTotal
 }: RecapitulatifReservationProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [checkIn] = useState(searchParams.get('checkIn') || '')
+  const [checkOut] = useState(searchParams.get('checkOut') || '')
+
+  // Calculer le prix en fonction des dates (avec gestion weekend)
+  const priceDetails = checkIn && checkOut ? calculateTotalPrice(
+    parseDateISO(checkIn),
+    parseDateISO(checkOut),
+    chambre.prix,
+    chambre.prixWeekend
+  ) : null
+
   // Le prix du backend inclut les taxes
-  const chambrePrixTotal = backendChambrePrixTotal || (nights * chambre.prix)
+  const chambrePrixTotal = backendChambrePrixTotal || (priceDetails?.totalPrice || (nights * chambre.prix))
 
   // Calculer le prix de base (sans taxes) pour la simulation
-  const prixParNuit = chambre.prix
-  const totalBase = prixParNuit * nights
+  const totalBase = priceDetails?.totalPrice || (nights * chambre.prix)
 
   // Services spa avec réduction de 10%
   const servicesPrixOriginal = selectedServices.reduce((sum, s) => sum + (s.prixSelectionne || s.prix || 0), 0)
@@ -76,14 +95,49 @@ export function RecapitulatifReservation({
         </div>
         {/* Détail du calcul avec simulation des taxes */}
         <div className="bg-neutral-50 rounded-lg p-3 space-y-1.5">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-neutral-600">Prix par nuit</span>
-            <span className="font-medium text-neutral-900">{prixParNuit.toFixed(2)}$</span>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-neutral-600">Nombre de nuits</span>
-            <span className="font-medium text-neutral-900">× {nights}</span>
-          </div>
+          {priceDetails && priceDetails.hasWeekend ? (
+            // Affichage détaillé si période inclut un weekend
+            <>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-neutral-600">Nuits semaine</span>
+                <span className="font-medium text-neutral-900">
+                  {priceDetails.weekdayNights} × {chambre.prix}$ = {priceDetails.weekdayTotal}$
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-neutral-600">Nuits weekend</span>
+                <span className="font-medium text-amber-600">
+                  {priceDetails.weekendNights} × {chambre.prixWeekend}$ = {priceDetails.weekendTotal}$
+                </span>
+              </div>
+              {priceDetails.weekendNights > 0 && (
+                <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 rounded px-2 py-1">
+                  <Sparkles className="h-3 w-3" />
+                  <span>Tarif weekend appliqué</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between text-sm pt-1">
+                <span className="text-neutral-700 font-medium">Sous-total chambre</span>
+                <span className="font-semibold text-neutral-900">{totalBase.toFixed(2)}$</span>
+              </div>
+            </>
+          ) : (
+            // Affichage simple si pas de weekend
+            <>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-neutral-600">Prix par nuit</span>
+                <span className="font-medium text-neutral-900">{chambre.prix}$</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-neutral-600">Nombre de nuits</span>
+                <span className="font-medium text-neutral-900">× {nights}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm pt-1">
+                <span className="text-neutral-700 font-medium">Sous-total chambre</span>
+                <span className="font-semibold text-neutral-900">{totalBase.toFixed(2)}$</span>
+              </div>
+            </>
+          )}
           <div className="flex items-center justify-between text-sm">
             <span className="text-neutral-600">T.P.S (5%)</span>
             <span className="font-medium text-neutral-900">{taxesTPS.toFixed(2)}$</span>

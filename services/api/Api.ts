@@ -8,7 +8,8 @@ const hotelId = `cmh3iygew00009crzsls6rlzy`
 // IMPORTANT: Ces routes devraient être publiques mais le backend les bloque actuellement
 // En attendant la correction backend, on les laisse en mode "semi-public" (avec token optionnel)
 const PUBLIC_ROUTES = [
-  '/api/v1/rooms',             // Liste des chambres
+  '/api/v1/rooms',             // Liste des chambres (ancienne route)
+  '/api/v1/room-types',        // Types de chambres (inventaire)
   '/api/v1/auth/guest',        // Enregistrement invité
   '/api/v1/reservations/calculate', // Calcul prix réservation
   '/api/v1/reservations/availability', // Vérifier disponibilité chambres

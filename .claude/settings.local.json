@@ -6,7 +6,8 @@
       "Bash(ls:*)",
       "Bash(npm run build:*)",
       "Read(//private/tmp/**)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []

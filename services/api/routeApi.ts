@@ -1,15 +1,43 @@
 import apiService from './Api'
 import { Room, ApiRoom } from '@/types/room'
 
-// ==================== CHAMBRES ====================
+// ==================== ROOM TYPES (INVENTAIRE) ====================
+
+const hotelId = `cmh3iygew00009crzsls6rlzy`
+
+/**
+ * Récupère tous les types de chambres d'un hôtel
+ * Retourne l'inventaire par type (DOUBLE, SUITE, etc.) avec totalRooms
+ */
+export const getAllRoomTypes = (hotelIdParam?: string) => {
+  const id = hotelIdParam || hotelId
+  return apiService.get(`/api/v1/room-types/hotels/${id}`)
+}
+
+/**
+ * Récupère les statistiques des types de chambres
+ */
+export const getRoomTypesStats = (hotelIdParam?: string) => {
+  const id = hotelIdParam || hotelId
+  return apiService.get(`/api/v1/room-types/hotels/${id}/stats`)
+}
+
+/**
+ * Récupère un type de chambre spécifique
+ */
+export const getRoomType = (roomType: string, hotelIdParam?: string) => {
+  const id = hotelIdParam || hotelId
+  return apiService.get(`/api/v1/room-types/hotels/${id}/${roomType}`)
+}
+
+// ==================== CHAMBRES (Anciennes routes - à garder pour compatibilité) ====================
 
 /**
  * Récupère toutes les chambres (retourne le format API)
+ * @deprecated Utiliser getAllRoomTypes() à la place
  */
-
-const hotelId = `cmh3iygew00009crzsls6rlzy`
 export const getAllChambres = () => {
-  return apiService.get<ApiRoom[]>(`/api/v1/rooms/?hotelId=${hotelId}`)
+  return apiService.get(`/api/v1/rooms/?hotelId=${hotelId}`)
 }
 
 /**
@@ -63,9 +91,10 @@ export const checkRoomsAvailability = (data: {
 
 /**
  * ÉTAPE 1 : Calcul du prix et vérification de disponibilité
+ * NOUVEAU: Utilise roomType au lieu de roomId (système d'inventaire)
  */
 export const calculateReservationPrice = (data: {
-  roomId: string
+  roomType: string  // Type de chambre: SIMPLE, DOUBLE, SUITE, etc.
   checkInDate: string
   checkOutDate: string
   numberOfGuests: number
@@ -81,10 +110,11 @@ export const calculateReservationPrice = (data: {
 
 /**
  * ÉTAPE 2 : Création compte client + réservation PENDING
+ * NOUVEAU: Utilise roomType au lieu de roomId (système d'inventaire)
  */
 export const createGuestReservation = (data: {
   // Informations chambre et dates
-  roomId: string
+  roomType: string  // Type de chambre: SIMPLE, DOUBLE, SUITE, etc.
   checkInDate: string
   checkOutDate: string
   numberOfGuests: number

@@ -32,6 +32,11 @@ import {
   addSpaServiceToReservation,
   confirmReservationPayment
 } from '@/services/api/routeApi'
+import {
+  calculateTotalPrice,
+  parseDateISO,
+  countWeekendNights
+} from '@/utils/priceCalculator'
 
 export default function ReservationPage({ params }: { params: Promise<{ chambreId: string }> }) {
   // Unwrap params avec React.use()
@@ -86,8 +91,10 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
   const chambre = {
     id: chambreId,
     nom: room.nom,
+    type: room.type, // Type de chambre backend (SIMPLE, DOUBLE, SUITE, etc.)
     categorie: room.categorie,
     prix: room.prix,
+    prixWeekend: room.prixWeekend,
     image: room.images[0],
     capacite: room.capacite
   }
@@ -100,11 +107,23 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   }
 
+
   // Utiliser les données calculées par le backend si disponibles, sinon calculer côté client
   const nights = calculatedPrice?.numberOfNights || calculateNights()
 
   // Prix de la chambre du backend (avec taxes incluses)
-  const chambrePrixTotal = calculatedPrice?.totalPrice || (nights * chambre.prix)
+  // Si pas de prix backend, calculer localement avec les tarifs weekend
+  const chambrePrixTotal = calculatedPrice?.totalPrice || (() => {
+    if (!checkIn || !checkOut) return nights * chambre.prix
+
+    const priceDetails = calculateTotalPrice(
+      parseDateISO(checkIn),
+      parseDateISO(checkOut),
+      chambre.prix,
+      chambre.prixWeekend
+    )
+    return priceDetails.totalPrice
+  })()
 
   // Pour l'affichage, on va juste ajouter les services avec réduction de 10%
   const servicesPrixOriginal = selectedServices.reduce((sum, s) => sum + (s.prixSelectionne || s.prix || 0), 0)
@@ -122,6 +141,17 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
     { number: 2, title: 'Informations', icon: Users },
     { number: 3, title: 'Paiement', icon: CreditCard },
   ]
+    // Ajouter un useEffect pour loguer les services sélectionnés et le prix total
+useEffect(() => {
+  const servicesPrixOriginal = selectedServices.reduce((sum, s) => sum + (s.prixSelectionne || s.prix || 0), 0);
+  const servicesPrixAvecReduction = servicesPrixOriginal * 0.9; // 10% de réduction sur les services spa
+  const nouveauTotal = chambrePrixTotal + servicesPrixAvecReduction + tps + tvq;
+
+  console.log('🧖 Services spa sélectionnés:', selectedServices);
+  console.log('💰 Prix des services spa (avant réduction):', servicesPrixOriginal.toFixed(2), '$');
+  console.log('💰 Prix des services spa (après réduction):', servicesPrixAvecReduction.toFixed(2), '$');
+  console.log('💵 Nouveau total (chambre + services + taxes):', nouveauTotal.toFixed(2), '$');
+}, [selectedServices, chambrePrixTotal, tps, tvq]);
 
   const handleNext = async () => {
     if (currentStep < 3) {
@@ -142,14 +172,14 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
           const checkOutISO = checkOutDate.toISOString()
 
           console.log('📊 Calcul du prix avec:', {
-            roomId: chambreId,
+            roomType: chambre.type,
             checkInDate: checkInISO,
             checkOutDate: checkOutISO,
             numberOfGuests: guests,
           })
 
           const response = await calculateReservationPrice({
-            roomId: chambreId,
+            roomType: chambre.type, // Utiliser le type de chambre au lieu de l'ID
             checkInDate: checkInISO,
             checkOutDate: checkOutISO,
             numberOfGuests: guests,
@@ -193,105 +223,213 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
       }
 
       // ÉTAPE 2 : Créer la réservation avec statut PENDING
-      if (currentStep === 2 && clientInfo) {
-        try {
-          // Convertir les dates au format ISO complet
-          const checkInISO = new Date(checkIn).toISOString()
-          const checkOutISO = new Date(checkOut).toISOString()
+      // if (currentStep === 2 && clientInfo) {
+      //   try {
+      //     // Convertir les dates au format ISO complet
+      //     const checkInISO = new Date(checkIn).toISOString()
+      //     const checkOutISO = new Date(checkOut).toISOString()
 
-          // Construire l'objet de réservation
-          const reservationData = {
-            roomId: chambreId,
-            checkInDate: checkInISO,
-            checkOutDate: checkOutISO,
-            numberOfGuests: guests,
-            guest: {
-              firstName: clientInfo.prenom,
-              lastName: clientInfo.nom,
-              email: clientInfo.email,
-              phone: clientInfo.telephone,
-              ...(clientInfo.adresse && clientInfo.adresse.trim() && { address: clientInfo.adresse })
-            },
-            ...(clientInfo.commentaires && clientInfo.commentaires.trim() && { specialRequests: clientInfo.commentaires })
-          }
+      //     // Construire l'objet de réservation
+      //     const reservationData = {
+      //       roomType: chambre.type, // Utiliser le type de chambre au lieu de l'ID
+      //       checkInDate: checkInISO,
+      //       checkOutDate: checkOutISO,
+      //       numberOfGuests: guests,
+      //       guest: {
+      //         firstName: clientInfo.prenom,
+      //         lastName: clientInfo.nom,
+      //         email: clientInfo.email,
+      //         phone: clientInfo.telephone,
+      //         ...(clientInfo.adresse && clientInfo.adresse.trim() && { address: clientInfo.adresse })
+      //       },
+      //       ...(clientInfo.commentaires && clientInfo.commentaires.trim() && { specialRequests: clientInfo.commentaires })
+      //     }
 
-          console.log('📝 Création réservation PENDING avec:', reservationData)
-          console.log('📋 JSON stringifié:', JSON.stringify(reservationData, null, 2))
+      //     console.log('📝 Création réservation PENDING avec:', reservationData)
+      //     console.log('📋 JSON stringifié:', JSON.stringify(reservationData, null, 2))
 
-          // ÉTAPE 2.1 : Créer la réservation PENDING
-          const response = await createGuestReservation(reservationData)
-          console.log('✅ Réservation PENDING créée:', response.data.data)
+      //     // ÉTAPE 2.1 : Créer la réservation PENDING
+      //     const response = await createGuestReservation(reservationData)
+      //     console.log('✅ Réservation PENDING créée:', response.data.data)
 
-          // Extraire l'ID de la réservation
-          const responseData = response.data.data
-          const newReservationId = responseData.reservation?.id || responseData.id
+      //     // Extraire l'ID de la réservation
+      //     const responseData = response.data.data
+      //     const newReservationId = responseData.reservation?.id || responseData.id
 
-          if (!newReservationId) {
-            throw new Error('ID de réservation non trouvé dans la réponse')
-          }
+      //     if (!newReservationId) {
+      //       throw new Error('ID de réservation non trouvé dans la réponse')
+      //     }
 
-          setReservationId(newReservationId)
-          console.log('🔑 Reservation ID stocké:', newReservationId)
+      //     setReservationId(newReservationId)
+      //     console.log('🔑 Reservation ID stocké:', newReservationId)
 
-          // ÉTAPE 2.2 : Ajouter les services spa à la réservation (si sélectionnés)
-          if (selectedServices.length > 0) {
-            console.log(`🧖 Ajout de ${selectedServices.length} service(s) spa à la réservation...`)
-            console.log('📋 Services sélectionnés:', selectedServices.map(s => ({
-              nom: s.nom,
-              prix: s.prixSelectionne || s.prix,
-              prixAvecReduc: (s.prixSelectionne || s.prix) * 0.9,
-              duree: s.dureeSelectionnee,
-              personnes: s.nombrePersonnes
-            })))
+      //     // ÉTAPE 2.2 : Ajouter les services spa à la réservation (si sélectionnés)
+      //     if (selectedServices.length > 0) {
+      //       console.log(`🧖 Ajout de ${selectedServices.length} service(s) spa à la réservation...`)
+      //       console.log('📋 Services sélectionnés:', selectedServices.map(s => ({
+      //         nom: s.nom,
+      //         prix: s.prixSelectionne || s.prix,
+      //         prixAvecReduc: (s.prixSelectionne || s.prix) * 0.9,
+      //         duree: s.dureeSelectionnee,
+      //         personnes: s.nombrePersonnes
+      //       })))
 
-            for (const service of selectedServices) {
-              try {
-                const spaServiceData = {
-                  spaServiceId: service.id,
-                  duree: service.dureeSelectionnee,
-                  nombrePersonnes: service.nombrePersonnes || 1,
-                  date: service.date || checkIn,  // Format YYYY-MM-DD
-                  heure: service.heure || '10:00',  // Format HH:mm
-                }
+      //       for (const service of selectedServices) {
+      //         try {
+      //           const spaServiceData = {
+      //             spaServiceId: service.id,
+      //             duree: service.dureeSelectionnee,
+      //             nombrePersonnes: service.nombrePersonnes || 1,
+      //             date: service.date || checkIn,  // Format YYYY-MM-DD
+      //             heure: service.heure || '10:00',  // Format HH:mm
+      //           }
 
-                console.log('➕ Ajout service spa:', spaServiceData)
+      //           console.log('➕ Ajout service spa:', spaServiceData)
 
-                const spaResponse = await addSpaServiceToReservation(newReservationId, spaServiceData)
-                console.log('✅ Service spa ajouté:', spaResponse.data.data)
-              } catch (spaError: any) {
-                console.error('❌ Erreur ajout service spa:', spaError.response?.data)
-                // Continuer même si un service échoue
-              }
-            }
+      //           const spaResponse = await addSpaServiceToReservation(newReservationId, spaServiceData)
+      //           console.log('✅ Service spa ajouté:', spaResponse.data.data)
+      //         } catch (spaError: any) {
+      //           console.error('❌ Erreur ajout service spa:', spaError.response?.data)
+      //           // Continuer même si un service échoue
+      //         }
+      //       }
 
-            console.log('✅ Tous les services spa ont été traités')
-          }
-        } catch (error: any) {
-          console.error('❌ Erreur lors de la création de la réservation:', error)
-          console.error('📋 Détails de l\'erreur:', error.response?.data)
-          console.error('🔍 Détails de validation:', JSON.stringify(error.response?.data?.error, null, 2))
+      //       console.log('✅ Tous les services spa ont été traités')
+      //     }
+      //   } catch (error: any) {
+      //     console.error('❌ Erreur lors de la création de la réservation:', error)
+      //     console.error('📋 Détails de l\'erreur:', error.response?.data)
+      //     console.error('🔍 Détails de validation:', JSON.stringify(error.response?.data?.error, null, 2))
 
-          // Afficher les erreurs de validation de manière détaillée
-          let errorMessage = 'Erreur lors de la création de la réservation'
+      //     // Afficher les erreurs de validation de manière détaillée
+      //     let errorMessage = 'Erreur lors de la création de la réservation'
 
-          if (error.response?.data?.error) {
-            const validationErrors = error.response.data.error
-            if (typeof validationErrors === 'object') {
-              errorMessage = 'Erreurs de validation:\n' +
-                Object.entries(validationErrors)
-                  .map(([field, msg]) => `- ${field}: ${msg}`)
-                  .join('\n')
-            } else {
-              errorMessage = validationErrors.toString()
-            }
-          } else if (error.response?.data?.message) {
-            errorMessage = error.response.data.message
-          }
+      //     if (error.response?.data?.error) {
+      //       const validationErrors = error.response.data.error
+      //       if (typeof validationErrors === 'object') {
+      //         errorMessage = 'Erreurs de validation:\n' +
+      //           Object.entries(validationErrors)
+      //             .map(([field, msg]) => `- ${field}: ${msg}`)
+      //             .join('\n')
+      //       } else {
+      //         errorMessage = validationErrors.toString()
+      //       }
+      //     } else if (error.response?.data?.message) {
+      //       errorMessage = error.response.data.message
+      //     }
 
-          alert(errorMessage)
-          return
-        }
+      //     alert(errorMessage)
+      //     return
+      //   }
+      // }
+      // ÉTAPE 2 : Créer la réservation avec statut PENDING
+if (currentStep === 2 && clientInfo) {
+  try {
+    // Convertir les dates au format ISO complet
+    const checkInISO = new Date(checkIn).toISOString();
+    const checkOutISO = new Date(checkOut).toISOString();
+
+    // Calculer le prix des services spa
+    const servicesPrixOriginal = selectedServices.reduce((sum, s) => sum + (s.prixSelectionne || s.prix || 0), 0);
+    const servicesPrixAvecReduction = servicesPrixOriginal * 0.9; // 10% de réduction sur les services spa
+
+    // Construire l'objet de réservation selon le format attendu par le backend
+    const reservationData = {
+      roomType: chambre.type,
+      checkInDate: checkInISO,
+      checkOutDate: checkOutISO,
+      numberOfGuests: guests,
+      guest: {
+        firstName: clientInfo.prenom,
+        lastName: clientInfo.nom,
+        email: clientInfo.email,
+        phone: clientInfo.telephone,
+        ...(clientInfo.adresse && clientInfo.adresse.trim() && { address: clientInfo.adresse }),
+      },
+      ...(clientInfo.commentaires && clientInfo.commentaires.trim() && { specialRequests: clientInfo.commentaires }),
+      // Format exact attendu par le backend pour les services spa
+      ...(selectedServices.length > 0 && {
+        spaServices: selectedServices.map((service) => ({
+          spaServiceId: service.id,
+          duree: service.dureeSelectionnee,
+          prix: (service.prixSelectionne || service.prix) * 0.9, // Prix avec réduction 10%
+          nombrePersonnes: service.nombrePersonnes || 1,
+          date: service.date || checkIn,
+          heure: service.heure || '10:00',
+          ...(service.notes && { notes: service.notes })
+        }))
+      })
+    };
+
+    console.log('📝 Création réservation PENDING avec:', reservationData);
+    console.log('📋 JSON stringifié:', JSON.stringify(reservationData, null, 2));
+
+    // ÉTAPE 2.1 : Créer la réservation PENDING
+    const response = await createGuestReservation(reservationData);
+    console.log('✅ Réservation PENDING créée:', response.data.data);
+
+    // Extraire l'ID de la réservation
+    const responseData = response.data.data;
+    const newReservationId = responseData.reservation?.id || responseData.id;
+
+    if (!newReservationId) {
+      throw new Error('ID de réservation non trouvé dans la réponse');
+    }
+
+    setReservationId(newReservationId);
+    console.log('🔑 Reservation ID stocké:', newReservationId);
+    console.log('✅ Réservation créée avec services spa inclus (gérés par le backend)');
+
+    // NOTE: Les services spa sont maintenant gérés directement par le backend
+    // lors de la création de la réservation (spaServices dans reservationData)
+    // Plus besoin d'appeler addSpaServiceToReservation séparément
+
+    // ANCIENNE MÉTHODE (gardée en commentaire au cas où) :
+    // ÉTAPE 2.2 : Ajouter les services spa via route séparée
+    // if (selectedServices.length > 0) {
+    //   console.log(`🧖 Ajout de ${selectedServices.length} service(s) spa...`);
+    //   for (const service of selectedServices) {
+    //     try {
+    //       const spaServiceData = {
+    //         spaServiceId: service.id,
+    //         duree: service.dureeSelectionnee,
+    //         nombrePersonnes: service.nombrePersonnes || 1,
+    //         date: service.date || checkIn,
+    //         heure: service.heure || '10:00',
+    //       };
+    //       const spaResponse = await addSpaServiceToReservation(newReservationId, spaServiceData);
+    //       console.log('✅ Service spa ajouté:', spaResponse.data.data);
+    //     } catch (spaError: any) {
+    //       console.error('❌ Erreur ajout service spa:', spaError.response?.data);
+    //     }
+    //   }
+    // }
+  } catch (error: any) {
+    console.error('❌ Erreur lors de la création de la réservation:', error);
+    console.error('📋 Détails de l\'erreur:', error.response?.data);
+    console.error('🔍 Détails de validation:', JSON.stringify(error.response?.data?.error, null, 2));
+
+    // Afficher les erreurs de validation de manière détaillée
+    let errorMessage = 'Erreur lors de la création de la réservation';
+
+    if (error.response?.data?.error) {
+      const validationErrors = error.response.data.error;
+      if (typeof validationErrors === 'object') {
+        errorMessage = 'Erreurs de validation:\n' +
+          Object.entries(validationErrors)
+            .map(([field, msg]) => `- ${field}: ${msg}`)
+            .join('\n');
+      } else {
+        errorMessage = validationErrors.toString();
       }
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    }
+
+    alert(errorMessage);
+    return;
+  }
+}
 
       setCurrentStep(currentStep + 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -548,12 +686,45 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
                   </div>
 
                   {/* Prix */}
-                  <div className="text-right">
-                    <div className="font-display text-2xl font-bold text-primary-600">
-                      {chambre.prix}$
+                    <div className="text-right">
+                      <div className="font-display text-2xl font-bold text-primary-600">
+                        {(() => {
+                          // Si des dates sont sélectionnées, afficher le prix moyen réel
+                          if (checkIn && checkOut) {
+                            const priceDetails = calculateTotalPrice(
+                              parseDateISO(checkIn),
+                              parseDateISO(checkOut),
+                              chambre.prix,
+                              chambre.prixWeekend
+                            );
+
+                            // Si le séjour inclut des nuits de week-end, afficher le prix du week-end
+                            if (priceDetails.hasWeekend) {
+                              return `${chambre.prixWeekend}$`;
+                            }
+
+                            // Sinon, afficher le prix standard
+                            return `${chambre.prix}$`;
+                          }
+
+                          // Si aucune date n'est sélectionnée, afficher le prix de base
+                          return `${chambre.prix}$`;
+                        })()}
+                      </div>
+                      <div className="text-sm text-neutral-600">
+                        {checkIn && checkOut && (() => {
+                          const priceDetails = calculateTotalPrice(
+                            parseDateISO(checkIn),
+                            parseDateISO(checkOut),
+                            chambre.prix,
+                            chambre.prixWeekend
+                          );
+
+                          // Ajouter une indication si le prix inclut des nuits de week-end
+                          return priceDetails.hasWeekend ? 'prix week-end/nuit' : 'par nuit';
+                        })() || 'par nuit'}
+                      </div>
                     </div>
-                    <div className="text-sm text-neutral-600">par nuit</div>
-                  </div>
                 </div>
               </motion.div>
 
@@ -650,6 +821,20 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
                                   {calculatedPrice.numberOfNights} {calculatedPrice.numberOfNights > 1 ? 'nuits' : 'nuit'}
                                 </span>
                               </div>
+                              {(() => {
+                                const weekendNights = countWeekendNights(
+                                  parseDateISO(checkIn),
+                                  parseDateISO(checkOut)
+                                )
+                                return weekendNights > 0 && (
+                                  <div className="flex items-center gap-2 mb-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                    <Sparkles className="h-4 w-4 text-amber-600" />
+                                    <span className="text-xs font-semibold text-amber-700">
+                                      Inclut {weekendNights} nuit{weekendNights > 1 ? 's' : ''} de weekend (tarif spécial)
+                                    </span>
+                                  </div>
+                                )
+                              })()}
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-neutral-700">Prix de la chambre:</span>
                                 <span className="font-display text-2xl font-bold text-primary-600">
@@ -668,6 +853,20 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
                                   {calculateNights()} {calculateNights() > 1 ? 'nuits' : 'nuit'}
                                 </span>
                               </div>
+                              {(() => {
+                                const weekendNights = countWeekendNights(
+                                  parseDateISO(checkIn),
+                                  parseDateISO(checkOut)
+                                )
+                                return weekendNights > 0 && (
+                                  <div className="flex items-center gap-2 mb-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                    <Sparkles className="h-4 w-4 text-amber-600" />
+                                    <span className="text-xs font-semibold text-amber-700">
+                                      Inclut {weekendNights} nuit{weekendNights > 1 ? 's' : ''} de weekend
+                                    </span>
+                                  </div>
+                                )
+                              })()}
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-neutral-700">Prix estimé:</span>
                                 <span className="font-display text-2xl font-bold text-primary-600">
@@ -675,7 +874,18 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
                                 </span>
                               </div>
                               <div className="text-xs text-neutral-600 mt-2">
-                                {chambre.prix}$ × {calculateNights()} {calculateNights() > 1 ? 'nuits' : 'nuit'}
+                                {(() => {
+                                  const priceDetails = calculateTotalPrice(
+                                    parseDateISO(checkIn),
+                                    parseDateISO(checkOut),
+                                    chambre.prix,
+                                    chambre.prixWeekend
+                                  )
+                                  if (priceDetails.hasWeekend) {
+                                    return `${priceDetails.weekdayNights} nuit${priceDetails.weekdayNights > 1 ? 's' : ''} × ${chambre.prix}$ + ${priceDetails.weekendNights} nuit${priceDetails.weekendNights > 1 ? 's' : ''} weekend × ${chambre.prixWeekend}$`
+                                  }
+                                  return `${chambre.prix}$ × ${calculateNights()} ${calculateNights() > 1 ? 'nuits' : 'nuit'}`
+                                })()}
                               </div>
                             </>
                           )}

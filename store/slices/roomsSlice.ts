@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import { Room, transformApiRoomToRoom } from '@/types/room'
+import { Room, transformRoomTypeToRoom } from '@/types/room'
 
 // État initial
 interface RoomsState {
@@ -26,7 +26,7 @@ const initialState: RoomsState = {
   filters: {
     category: 'Toutes',
     minPrice: 0,
-    maxPrice: 500,
+    maxPrice: 10000, // Augmenté pour inclure toutes les chambres par défaut
     capacity: 1,
     available: null,
     checkIn: '',
@@ -34,23 +34,46 @@ const initialState: RoomsState = {
   }
 }
 
-// Thunk asynchrone pour récupérer les chambres depuis l'API avec Axios
+// Thunk asynchrone pour récupérer les types de chambres (inventaire) depuis l'API
 export const fetchRooms = createAsyncThunk(
   'rooms/fetchRooms',
   async (_, { rejectWithValue }) => {
     try {
-      const { getAllChambres } = await import('@/services/api/routeApi')
-      const response = await getAllChambres()
-      console.log('Réponse API complète:', response.data)
+      const { getAllRoomTypes } = await import('@/services/api/routeApi')
+      const response = await getAllRoomTypes()
+      console.log('✅ Réponse API room-types:', response.data)
 
-      // L'API retourne { success, message, data, meta }
-      // Extraire le tableau de chambres depuis data
-      const apiRooms = (response.data as any).data || response.data
-      console.log('Chambres API récupérées:', apiRooms)
+      // L'API retourne { success, message, data: { hotel, roomTypes } }
+      const apiData = (response.data as any).data
+      const roomTypes = apiData.roomTypes || apiData || []
+      console.log('📦 Types de chambres (inventaire):', roomTypes)
 
-      // Transform API data to UI format
-      const transformedRooms = apiRooms.map(transformApiRoomToRoom)
-      console.log('Chambres transformées:', transformedRooms)
+      // Debug: afficher le premier élément pour vérifier la structure
+      if (roomTypes.length > 0) {
+        console.log('🔍 Structure du premier roomType:', roomTypes[0])
+        console.log('🔍 Clés disponibles:', Object.keys(roomTypes[0]))
+      }
+
+      // Vérifier que roomTypes est bien un tableau
+      if (!Array.isArray(roomTypes)) {
+        console.error('❌ roomTypes n\'est pas un tableau:', roomTypes)
+        throw new Error('Format de données invalide: roomTypes doit être un tableau')
+      }
+
+      // Transform RoomTypeInventory data to UI format
+      const transformedRooms = roomTypes.map((rt: any, index: number) => {
+        console.log(`🔄 Transformation roomType ${index + 1}:`, rt)
+        try {
+          const transformed = transformRoomTypeToRoom(rt)
+          console.log(`✅ Transformé ${index + 1}:`, transformed)
+          return transformed
+        } catch (err) {
+          console.error(`❌ Erreur transformation ${index + 1}:`, err, rt)
+          return null
+        }
+      }).filter(Boolean) // Enlever les null
+
+      console.log('✅ Chambres transformées (total):', transformedRooms.length, transformedRooms)
 
       return transformedRooms
     } catch (error: any) {
@@ -172,26 +195,47 @@ const roomsSlice = createSlice({
 
 // Fonction helper pour appliquer tous les filtres
 function applyFilters(state: RoomsState) {
+  console.log('🔧 Début applyFilters - Total chambres:', state.rooms.length)
+  console.log('🔧 Filtres actifs:', state.filters)
+
   let filtered = state.rooms
 
   // Filtrer par catégorie
   if (state.filters.category !== 'Toutes') {
+    const beforeCount = filtered.length
     filtered = filtered.filter(room => room.categorie === state.filters.category)
+    console.log(`📁 Filtre catégorie "${state.filters.category}": ${beforeCount} -> ${filtered.length}`)
   }
 
   // Filtrer par prix
-  filtered = filtered.filter(
+  const beforePriceCount = filtered.length
+  const filteredByPrice = filtered.filter(
     room => room.prix >= state.filters.minPrice && room.prix <= state.filters.maxPrice
   )
+  if (filteredByPrice.length < filtered.length) {
+    const excluded = filtered.filter(room => room.prix < state.filters.minPrice || room.prix > state.filters.maxPrice)
+    console.log(`💰 Filtre prix (${state.filters.minPrice}$ - ${state.filters.maxPrice}$): ${beforePriceCount} -> ${filteredByPrice.length}`)
+    console.log('❌ Chambres exclues par prix:', excluded.map(r => ({ nom: r.nom, prix: r.prix })))
+  }
+  filtered = filteredByPrice
 
   // Filtrer par capacité
+  const beforeCapacityCount = filtered.length
   filtered = filtered.filter(room => room.capacite >= state.filters.capacity)
+  if (filtered.length < beforeCapacityCount) {
+    console.log(`👥 Filtre capacité (>= ${state.filters.capacity}): ${beforeCapacityCount} -> ${filtered.length}`)
+  }
 
   // Filtrer par disponibilité
   if (state.filters.available !== null) {
+    const beforeAvailCount = filtered.length
     filtered = filtered.filter(room => room.disponible === state.filters.available)
+    if (filtered.length < beforeAvailCount) {
+      console.log(`✅ Filtre disponibilité (${state.filters.available}): ${beforeAvailCount} -> ${filtered.length}`)
+    }
   }
 
+  console.log('✅ Fin applyFilters - Chambres filtrées:', filtered.length)
   state.filteredRooms = filtered
 }
 
