@@ -52,7 +52,12 @@ export function RecapitulatifReservation({
   const totalBase = priceDetails?.totalPrice || (nights * chambre.prix)
 
   // Services spa avec réduction de 10%
-  const servicesPrixOriginal = selectedServices.reduce((sum, s) => sum + (s.prixSelectionne || s.prix || 0), 0)
+  // IMPORTANT : Multiplier le prix par le nombre de personnes
+  const servicesPrixOriginal = selectedServices.reduce((sum, s) => {
+    const prixUnitaire = s.prixSelectionne || s.prix || 0
+    const nombrePersonnes = s.nombrePersonnes || 1
+    return sum + (prixUnitaire * nombrePersonnes)
+  }, 0)
   const servicesReduction = servicesPrixOriginal * 0.10  // 10% de réduction
   const totalBaseSpa = servicesPrixOriginal * 0.9  // Prix après réduction
 
@@ -166,15 +171,32 @@ export function RecapitulatifReservation({
           </div>
           <div className="space-y-2">
             {selectedServices.map((service, index) => {
-              const prixOriginal = service.prixSelectionne || service.prix || 0
-              const prixReduit = prixOriginal * 0.9
+              const prixUnitaire = service.prixSelectionne || service.prix || 0
+              const nombrePersonnes = service.nombrePersonnes || 1
+              const prixTotal = prixUnitaire * nombrePersonnes
+              const prixReduit = prixTotal * 0.9
+
               return (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <span className="text-neutral-700">{service.nom}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-neutral-400 line-through text-xs">{prixOriginal.toFixed(2)}$</span>
-                    <span className="font-semibold text-green-600">{prixReduit.toFixed(2)}$</span>
+                <div key={index} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-neutral-700">{service.nom}</span>
+                      {nombrePersonnes > 1 && (
+                        <span className="text-xs text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded">
+                          × {nombrePersonnes} pers.
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-neutral-400 line-through text-xs">{prixTotal.toFixed(2)}$</span>
+                      <span className="font-semibold text-green-600">{prixReduit.toFixed(2)}$</span>
+                    </div>
                   </div>
+                  {nombrePersonnes > 1 && (
+                    <div className="text-xs text-neutral-500 pl-2">
+                      {prixUnitaire}$ × {nombrePersonnes} personne{nombrePersonnes > 1 ? 's' : ''}
+                    </div>
+                  )}
                 </div>
               )
             })}

@@ -2,6 +2,7 @@
 
 interface ReservationData {
   reservationNumber: string
+  guestId: string  // ID unique du client pour recherche
   date: string
   chambre: {
     nom: string
@@ -17,16 +18,13 @@ interface ReservationData {
     prenom: string
     email: string
     telephone: string
-    adresse?: string
   }
   services?: Array<{
     nom: string
-    prix: number  // Prix avec réduction (10% off)
-    prixOriginal?: number  // Prix original avant réduction
-    duree?: number  // Durée en minutes
-    nombrePersonnes?: number  // Nombre de personnes
-    date?: string
-    heure?: string
+    prix: number
+    prixOriginal?: number
+    duree?: number
+    nombrePersonnes?: number
   }>
   subtotal: number
   tps: number
@@ -34,8 +32,28 @@ interface ReservationData {
   total: number
 }
 
+const loadImage = (url: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.drawImage(img, 0, 0)
+        resolve(canvas.toDataURL('image/jpeg'))
+      } else {
+        reject(new Error('Failed to get canvas context'))
+      }
+    }
+    img.onerror = () => reject(new Error('Failed to load image'))
+    img.src = url
+  })
+}
+
 export const generateReceiptPDF = async (data: ReservationData) => {
-  // Import dynamique de jsPDF pour éviter les erreurs SSR
   if (typeof window === 'undefined') {
     console.warn('generateReceiptPDF appelé côté serveur, ignoré')
     return
@@ -44,469 +62,277 @@ export const generateReceiptPDF = async (data: ReservationData) => {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF()
 
-  // Couleurs élégantes de l'hôtel
-  const primaryColor = [13, 71, 161] // Bleu navy élégant
-  const goldColor = [218, 165, 32] // Or luxueux
-  const darkGold = [184, 134, 11] // Or foncé
-  const lightGray = [248, 250, 252]
-  const mediumGray = [148, 163, 184]
+  // Charger le logo
+  let logoBase64: string | null = null
+  try {
+    logoBase64 = await loadImage('/images/hotel/logoH.jpg')
+  } catch (error) {
+    console.warn('Impossible de charger le logo:', error)
+  }
+
+  // Palette de couleurs modernes
+  const navy = [13, 71, 161]
+  const gold = [218, 165, 32]
   const darkGray = [51, 65, 85]
-  const accentBlue = [59, 130, 246]
+  const mediumGray = [100, 116, 139]
+  const lightGray = [148, 163, 184]
+  const veryLightGray = [241, 245, 249]
 
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
-  const marginBottom = 40 // Marge pour le footer
 
-  // Fonction pour vérifier si on doit ajouter une nouvelle page
-  const checkPageBreak = (currentY: number, neededSpace: number) => {
-    if (currentY + neededSpace > pageHeight - marginBottom) {
-      doc.addPage()
-      return 20 // Retourner à la position du haut de la nouvelle page
+  let y = 20
+
+  // ============ EN-TÊTE SIMPLE ============
+  // Logo
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, 'JPEG', 20, y, 30, 22)
+    } catch (error) {
+      console.warn('Erreur logo:', error)
     }
-    return currentY
   }
 
-  // === FILIGRANE ÉLÉGANT ===
-  doc.saveGraphicsState()
-  // @ts-ignore
-  doc.setGState(new doc.GState({ opacity: 0.03 }))
-  doc.setFontSize(80)
-  doc.setTextColor(100, 100, 100)
-
-  // Filigrane diagonal (sans caractères spéciaux)
-  doc.text('HOTEL SEPT-ILES', pageWidth / 2, pageHeight / 2, {
-    align: 'center',
-    angle: 45
-  })
-
-  // Motifs décoratifs subtils
-  doc.setDrawColor(200, 200, 200)
-  doc.setLineWidth(0.3)
-  for (let i = 0; i < 5; i++) {
-    doc.circle(20 + i * 40, 20, 3)
-    doc.circle(pageWidth - 20 - i * 40, pageHeight - 20, 3)
-  }
-
-  doc.restoreGraphicsState()
-
-  // === EN-TÊTE PREMIUM ===
-  // Gradient effect avec deux rectangles
-  // @ts-ignore
-  doc.setFillColor(...primaryColor)
-  doc.rect(0, 0, pageWidth, 50, 'F')
-
-  // Bande dorée décorative
-  // @ts-ignore
-  doc.setFillColor(...goldColor)
-  doc.rect(0, 48, pageWidth, 2, 'F')
-
-  // Nom de l'hôtel avec style élégant (sans accents)
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(28)
-  doc.setFont('helvetica', 'bold')
-  doc.text('HOTEL SEPT-ILES', 20, 22)
-
-  // Sous-titre élégant (sans accents)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(220, 220, 220)
-  doc.text('Luxe & Raffinement au Coeur de la Cote-Nord', 20, 30)
-
-  // Coordonnées (sans emojis)
-  doc.setFontSize(8)
-  doc.setTextColor(200, 200, 200)
-  doc.text('Sept-Iles, Quebec, Canada', 20, 38)
-  doc.text('Tel: (418) 962-2581', 20, 42)
-
-  // Logo de l'hôtel
-  // Fond blanc circulaire pour le logo
-  doc.setFillColor(255, 255, 255)
-  doc.circle(pageWidth - 30, 25, 15, 'F')
-
-  // Bordure dorée
-  doc.setDrawColor(...goldColor)
-  doc.setLineWidth(1.5)
-  doc.circle(pageWidth - 30, 25, 15)
-
-  // Texte du logo (H dans un cercle)
-  doc.setTextColor(...goldColor)
+  // Nom de l'hôtel
+  doc.setTextColor(...navy)
   doc.setFontSize(22)
   doc.setFont('helvetica', 'bold')
-  doc.text('H', pageWidth - 33.5, 30)
+  doc.text('HÔTEL SEPT-ÎLES', pageWidth / 2, y + 8, { align: 'center' })
 
-  // === TITRE DU DOCUMENT ÉLÉGANT ===
-  let yPos = 70
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...mediumGray)
+  doc.text('Sept-Îles, Québec  •  (418) 962-2581', pageWidth / 2, y + 15, { align: 'center' })
 
-  // Encadré pour le titre
-  doc.setFillColor(...lightGray)
-  doc.roundedRect(15, yPos - 8, pageWidth - 30, 22, 3, 3, 'F')
+  y += 35
 
-  doc.setTextColor(...primaryColor)
-  doc.setFontSize(20)
-  doc.setFont('helvetica', 'bold')
-  doc.text('CONFIRMATION DE RÉSERVATION', pageWidth / 2, yPos + 4, { align: 'center' })
-
-  yPos += 30
-
-  // === INFORMATIONS DE RÉSERVATION AVEC ENCADRÉ ===
-  // Numéro de réservation stylisé
-  doc.setDrawColor(...goldColor)
+  // Ligne de séparation
+  doc.setDrawColor(...gold)
   doc.setLineWidth(0.5)
-  doc.roundedRect(20, yPos, (pageWidth - 40) / 2 - 5, 14, 2, 2, 'S')
+  doc.line(20, y, pageWidth - 20, y)
+
+  y += 15
+
+  // ============ TITRE ============
+  doc.setTextColor(...darkGray)
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.text('REÇU DE RÉSERVATION', pageWidth / 2, y, { align: 'center' })
+
+  y += 12
+
+  // ============ NUMÉROS DE RÉFÉRENCE ============
+  // Fond gris léger
+  doc.setFillColor(...veryLightGray)
+  doc.rect(20, y - 3, pageWidth - 40, 18, 'F')
 
   doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...mediumGray)
+  doc.text('N° Réservation', 25, y + 3)
+  doc.text('ID Client', 25, y + 10)
+
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...darkGray)
-  doc.text('N° RÉSERVATION', 25, yPos + 5)
+  doc.setTextColor(...navy)
+  doc.setFontSize(10)
+  doc.text(data.reservationNumber, 65, y + 3)
+  doc.text(data.guestId, 65, y + 10)
 
-  doc.setFontSize(11)
-  doc.setTextColor(...primaryColor)
-  doc.text(data.reservationNumber, 25, yPos + 11)
-
-  // Date d'émission
-  doc.setDrawColor(...goldColor)
-  doc.roundedRect(pageWidth / 2 + 5, yPos, (pageWidth - 40) / 2 - 5, 14, 2, 2, 'S')
-
+  // Date à droite
+  doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
+  doc.setTextColor(...mediumGray)
+  doc.text('Date d\'émission', pageWidth - 25, y + 3, { align: 'right' })
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...darkGray)
-  doc.text('DATE D\'ÉMISSION', pageWidth / 2 + 10, yPos + 5)
+  doc.text(data.date, pageWidth - 25, y + 10, { align: 'right' })
 
-  doc.setFontSize(11)
-  doc.setTextColor(...primaryColor)
-  doc.text(data.date, pageWidth / 2 + 10, yPos + 11)
+  y += 25
 
-  yPos += 22
-
-  // === INFORMATIONS CLIENT (STYLE PREMIUM) ===
-  // Bordure dorée
-  doc.setDrawColor(...goldColor)
-  doc.setLineWidth(1)
-  doc.roundedRect(20, yPos, pageWidth - 40, 42, 3, 3, 'S')
-
-  // Fond dégradé (simulé)
-  doc.setFillColor(252, 252, 253)
-  doc.roundedRect(20, yPos, pageWidth - 40, 42, 3, 3, 'F')
-
-  // Icône client (cercle)
-  doc.setFillColor(...accentBlue)
-  doc.circle(28, yPos + 10, 4, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(8)
-  doc.text('👤', 26, yPos + 11)
-
-  yPos += 8
+  // ============ INFORMATIONS CLIENT ============
   doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...primaryColor)
-  doc.text('INFORMATIONS CLIENT', 38, yPos)
+  doc.setTextColor(...navy)
+  doc.text('CLIENT', 20, y)
 
-  yPos += 8
+  y += 8
+
   doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...darkGray)
-  doc.text(`${data.client.prenom} ${data.client.nom}`, 25, yPos)
+  doc.text(`${data.client.prenom} ${data.client.nom}`, 20, y)
 
-  yPos += 6
+  y += 6
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(...mediumGray)
-  doc.text(`Email: ${data.client.email}`, 25, yPos)
+  doc.text(data.client.email, 20, y)
 
-  yPos += 6
-  doc.text(`Tel: ${data.client.telephone}`, 25, yPos)
+  y += 5
+  doc.text(data.client.telephone, 20, y)
 
-  if (data.client.adresse) {
-    yPos += 6
-    doc.text(`Adresse: ${data.client.adresse}`, 25, yPos)
-  }
+  y += 15
 
-  yPos += 20
-
-  // Vérifier si on a besoin d'une nouvelle page
-  yPos = checkPageBreak(yPos, 60)
-
-  // === DETAILS DE LA RESERVATION (STYLE ELEGANT) ===
-  // Bordure avec gradient
-  doc.setDrawColor(...primaryColor)
-  doc.setLineWidth(1)
-  doc.roundedRect(20, yPos, pageWidth - 40, 55, 3, 3, 'S')
-
-  // Fond avec légère teinte
-  doc.setFillColor(247, 250, 252)
-  doc.roundedRect(20, yPos, pageWidth - 40, 55, 3, 3, 'F')
-
-  // Icône chambre
-  doc.setFillColor(...goldColor)
-  doc.circle(28, yPos + 10, 4, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.text('CH', 24.5, yPos + 12)
-
-  yPos += 8
+  // ============ DÉTAILS DE LA RÉSERVATION ============
   doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...primaryColor)
-  doc.text('DETAILS DE LA RESERVATION', 38, yPos)
+  doc.setTextColor(...navy)
+  doc.text('DÉTAILS DE LA RÉSERVATION', 20, y)
 
-  yPos += 9
+  y += 8
 
-  // Grille d'informations avec icônes
+  // Fond gris léger
+  doc.setFillColor(...veryLightGray)
+  doc.rect(20, y - 3, pageWidth - 40, 30, 'F')
+
+  // Chambre
   doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...darkGray)
-  doc.text('Chambre:', 25, yPos)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...mediumGray)
-  doc.text(`${data.chambre.nom} (${data.chambre.categorie})`, 55, yPos)
-
-  yPos += 6
+  doc.text('Chambre', 25, y + 3)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...darkGray)
-  doc.text('Prix/nuit:', 25, yPos)
+  doc.setFontSize(10)
+  doc.text(`${data.chambre.nom}`, 25, y + 9)
   doc.setFont('helvetica', 'normal')
-  doc.setTextColor(...goldColor)
-  doc.text(`${data.chambre.prix.toFixed(2)} $ CAD`, 55, yPos)
+  doc.setFontSize(8)
+  doc.setTextColor(...lightGray)
+  doc.text(`(${data.chambre.categorie})`, 25, y + 14)
 
-  yPos += 6
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...darkGray)
-  doc.text('Arrivee:', 25, yPos)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(...mediumGray)
-  doc.text(`${new Date(data.dateDebut).toLocaleDateString('fr-CA')}`, 55, yPos)
-
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...darkGray)
-  doc.text('Depart:', 110, yPos)
+  // Dates (en deux colonnes)
+  const colX = pageWidth / 2 + 10
+  doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...mediumGray)
-  doc.text(`${new Date(data.dateFin).toLocaleDateString('fr-CA')}`, 135, yPos)
-
-  yPos += 6
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...darkGray)
-  doc.text('Nuits:', 25, yPos)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(...mediumGray)
-  doc.text(`${data.nombreNuits}`, 55, yPos)
+  doc.text('Arrivée', colX, y + 3)
+  doc.text('Départ', colX + 40, y + 3)
 
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...darkGray)
-  doc.text('Personnes:', 110, yPos)
+  doc.setFontSize(9)
+  doc.text(new Date(data.dateDebut).toLocaleDateString('fr-CA'), colX, y + 9)
+  doc.text(new Date(data.dateFin).toLocaleDateString('fr-CA'), colX + 40, y + 9)
+
+  // Nuits et personnes
   doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
   doc.setTextColor(...mediumGray)
-  doc.text(`${data.nombrePersonnes}`, 135, yPos)
+  doc.text('Nuits', colX, y + 16)
+  doc.text('Personnes', colX + 40, y + 16)
 
-  yPos += 22
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...darkGray)
+  doc.text(String(data.nombreNuits), colX, y + 22)
+  doc.text(String(data.nombrePersonnes), colX + 40, y + 22)
 
-  // Vérifier si on a besoin d'une nouvelle page
-  yPos = checkPageBreak(yPos, 40)
+  y += 38
 
-  // === SERVICES ADDITIONNELS (STYLE PREMIUM) ===
+  // ============ SERVICES SPA (si présents) ============
   if (data.services && data.services.length > 0) {
-    const servicesHeight = 18 + (data.services.length * 13) + 5  // Augmenté de 8 à 13 pour les détails supplémentaires
-
-    // Vérifier si on a besoin d'une nouvelle page pour les services
-    yPos = checkPageBreak(yPos, servicesHeight)
-
-    // Bordure élégante
-    doc.setDrawColor(...accentBlue)
-    doc.setLineWidth(0.8)
-    doc.roundedRect(20, yPos, pageWidth - 40, servicesHeight, 3, 3, 'S')
-
-    // Fond
-    doc.setFillColor(250, 252, 255)
-    doc.roundedRect(20, yPos, pageWidth - 40, servicesHeight, 3, 3, 'F')
-
-    // Icône services (texte au lieu d'emoji)
-    doc.setFillColor(...accentBlue)
-    doc.circle(28, yPos + 9, 3.5, 'F')
-    doc.setTextColor(255, 255, 255)
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'bold')
-    doc.text('S', 26, yPos + 11)
-
-    yPos += 8
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(...accentBlue)
-    doc.text('SERVICES ADDITIONNELS', 38, yPos)
+    doc.setTextColor(...navy)
+    doc.text('SERVICES SPA', 20, y)
 
-    yPos += 9
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(...darkGray)
+    y += 8
 
-    data.services.forEach((service, index) => {
-      // Alternance de fond subtile
-      if (index % 2 === 0) {
-        doc.setFillColor(255, 255, 255)
-        doc.roundedRect(23, yPos - 2, pageWidth - 46, 12, 1, 1, 'F')
-      }
-
-      // Nom du service
-      doc.setTextColor(...darkGray)
-      doc.setFont('helvetica', 'bold')
-      doc.text(`- ${service.nom}`, 26, yPos)
-
-      // Prix avec réduction
-      doc.setTextColor(...goldColor)
-      doc.setFont('helvetica', 'bold')
-      doc.text(`${service.prix.toFixed(2)} $ CAD`, pageWidth - 26, yPos, { align: 'right' })
-
-      yPos += 5
-
-      // Détails supplémentaires (durée, personnes, date/heure)
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(7)
-      doc.setTextColor(...mediumGray)
-
-      let details = []
-      if (service.duree) details.push(`${service.duree} min`)
-      if (service.nombrePersonnes) details.push(`${service.nombrePersonnes} pers.`)
-      if (service.date) details.push(new Date(service.date).toLocaleDateString('fr-CA'))
-      if (service.heure) details.push(service.heure)
-
-      if (details.length > 0) {
-        doc.text(`  ${details.join(' • ')}`, 28, yPos)
-      }
-
-      // Afficher l'économie si prix original disponible
-      if (service.prixOriginal && service.prixOriginal > service.prix) {
-        const savings = service.prixOriginal - service.prix
-        doc.setTextColor(34, 197, 94) // Vert pour l'économie
-        doc.text(`(-10% = ${savings.toFixed(2)} $ economise)`, pageWidth - 26, yPos, { align: 'right' })
-      }
-
+    data.services.forEach((service) => {
       doc.setFontSize(9)
-      yPos += 8
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(...darkGray)
+      
+      let serviceName = service.nom
+      if (service.duree) serviceName += ` (${service.duree}min)`
+      if (service.nombrePersonnes && service.nombrePersonnes > 1) {
+        serviceName += ` - ${service.nombrePersonnes} pers.`
+      }
+      
+      doc.text(serviceName, 20, y)
+
+      // Prix
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...gold)
+      doc.text(`${service.prix.toFixed(2)} $`, pageWidth - 20, y, { align: 'right' })
+
+      y += 6
     })
 
-    yPos += 10
+    y += 10
   }
 
-  // === RESUME FINANCIER PREMIUM ===
-  yPos += 5
+  // ============ RÉSUMÉ FINANCIER ============
+  y += 5
 
-  // Vérifier si on a besoin d'une nouvelle page pour le résumé
-  yPos = checkPageBreak(yPos, 60)
+  // Ligne de séparation
+  doc.setDrawColor(...lightGray)
+  doc.setLineWidth(0.3)
+  doc.line(20, y, pageWidth - 20, y)
 
-  // Encadré élégant pour le résumé financier
-  const summaryBoxHeight = 55
-  doc.setDrawColor(...goldColor)
-  doc.setLineWidth(1.5)
-  doc.roundedRect(20, yPos, pageWidth - 40, summaryBoxHeight, 3, 3, 'S')
-
-  // Fond dégradé (simulé)
-  doc.setFillColor(255, 253, 245)
-  doc.roundedRect(20, yPos, pageWidth - 40, summaryBoxHeight, 3, 3, 'F')
-
-  // Titre du résumé (sans accents)
-  doc.setFontSize(12)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...primaryColor)
-  doc.text('RESUME FINANCIER', pageWidth / 2, yPos + 8, { align: 'center' })
-
-  yPos += 14
-
-  // Ligne de séparation dorée
-  doc.setDrawColor(...goldColor)
-  doc.setLineWidth(0.5)
-  doc.line(25, yPos, pageWidth - 25, yPos)
-
-  yPos += 8
+  y += 10
 
   // Sous-total
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...darkGray)
-  doc.text('Sous-total', 30, yPos)
+  doc.text('Sous-total', 20, y)
   doc.setFont('helvetica', 'bold')
-  doc.text(`${data.subtotal.toFixed(2)} $ CAD`, pageWidth - 30, yPos, { align: 'right' })
+  doc.text(`${data.subtotal.toFixed(2)} $`, pageWidth - 20, y, { align: 'right' })
 
-  yPos += 7
+  y += 7
 
   // TPS
   doc.setFont('helvetica', 'normal')
-  doc.setTextColor(...darkGray)
-  doc.text('T.P.S (5%)', 30, yPos)
-  doc.setFont('helvetica', 'bold')
-  doc.text(`${data.tps.toFixed(2)} $ CAD`, pageWidth - 30, yPos, { align: 'right' })
+  doc.setTextColor(...mediumGray)
+  doc.setFontSize(9)
+  doc.text('TPS (5%)', 20, y)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`${data.tps.toFixed(2)} $`, pageWidth - 20, y, { align: 'right' })
 
-  yPos += 7
+  y += 6
 
   // TVQ
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(...darkGray)
-  doc.text('T.V.Q (9,975%)', 30, yPos)
+  doc.text('TVQ (9,975%)', 20, y)
+  doc.text(`${data.tvq.toFixed(2)} $`, pageWidth - 20, y, { align: 'right' })
+
+  y += 10
+
+  // Ligne épaisse
+  doc.setDrawColor(...gold)
+  doc.setLineWidth(1)
+  doc.line(20, y, pageWidth - 20, y)
+
+  y += 10
+
+  // TOTAL
+  doc.setFontSize(14)
   doc.setFont('helvetica', 'bold')
-  doc.text(`${data.tvq.toFixed(2)} $ CAD`, pageWidth - 30, yPos, { align: 'right' })
+  doc.setTextColor(...navy)
+  doc.text('TOTAL', 20, y)
 
-  yPos += 10
+  doc.setFontSize(16)
+  doc.setTextColor(...gold)
+  doc.text(`${data.total.toFixed(2)} $ CAD`, pageWidth - 20, y, { align: 'right' })
 
-  // Ligne de séparation épaisse
-  doc.setDrawColor(...goldColor)
-  doc.setLineWidth(1.2)
-  doc.line(25, yPos - 2, pageWidth - 25, yPos - 2)
+  // ============ PIED DE PAGE ============
+  const footerY = pageHeight - 30
 
-  yPos += 6
+  // Ligne de séparation
+  doc.setDrawColor(...lightGray)
+  doc.setLineWidth(0.3)
+  doc.line(20, footerY, pageWidth - 20, footerY)
 
-  // TOTAL avec fond doré
-  doc.setFillColor(...goldColor)
-  doc.roundedRect(25, yPos - 5, pageWidth - 50, 12, 2, 2, 'F')
-
-  doc.setFontSize(13)
+  // Message
+  doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(255, 255, 255)
-  doc.text('TOTAL', 35, yPos + 2)
+  doc.setTextColor(...navy)
+  doc.text('Merci de votre confiance !', pageWidth / 2, footerY + 8, { align: 'center' })
 
-  doc.setFontSize(15)
-  doc.setFont('helvetica', 'bold')
-  doc.text(`${data.total.toFixed(2)} $ CAD`, pageWidth - 35, yPos + 2, { align: 'right' })
-
-  yPos += 20
-
-  // === PIED DE PAGE ÉLÉGANT ===
-  const footerY = pageHeight - 35
-
-  // Bande dorée décorative en haut du footer
-  doc.setFillColor(...goldColor)
-  doc.rect(0, footerY - 2, pageWidth, 2, 'F')
-
-  // Fond principal du footer avec dégradé (simulé)
-  doc.setFillColor(...primaryColor)
-  doc.rect(0, footerY, pageWidth, 35, 'F')
-
-  // Ligne décorative dorée
-  doc.setDrawColor(...goldColor)
-  doc.setLineWidth(0.5)
-  doc.line(30, footerY + 18, pageWidth - 30, footerY + 18)
-
-  // Message de remerciement (sans accents)
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(255, 255, 255)
-  doc.text('Merci d\'avoir choisi l\'Hotel Sept-Iles', pageWidth / 2, footerY + 8, { align: 'center' })
-
-  // Informations de contact (sans emojis)
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
-  doc.setTextColor(220, 220, 220)
-  doc.text('Tel: (418) 962-2581  |  Email: info@hotel-sept-iles.ca  |  Web: www.hotel-sept-iles.ca', pageWidth / 2, footerY + 13, { align: 'center' })
+  doc.setTextColor(...mediumGray)
+  doc.text('Pour toute question : info@hotel-sept-iles.ca  •  (418) 962-2581', pageWidth / 2, footerY + 14, { align: 'center' })
 
-  // Texte final (sans accents)
-  doc.setFontSize(7)
-  doc.setTextColor(200, 200, 200)
-  doc.text('Sept-Iles, Quebec, Canada - Au service de votre confort depuis 1985', pageWidth / 2, footerY + 23, { align: 'center' })
-
-  // Certification / Badge (sans accents)
-  doc.setFontSize(6)
-  doc.setTextColor(180, 180, 180)
-  doc.text('***** Hotel Certifie Excellence 2024', pageWidth / 2, footerY + 28, { align: 'center' })
-
-  // === TÉLÉCHARGEMENT DU PDF ===
-  const fileName = `Recu_Reservation_${data.reservationNumber}_${new Date().getTime()}.pdf`
+  // Téléchargement
+  const fileName = `Recu_${data.guestId}_${data.reservationNumber}.pdf`
   doc.save(fileName)
 }

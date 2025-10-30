@@ -65,8 +65,10 @@ export const registerGuest = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
+      console.log('📝 Données envoyées à registerGuest:', JSON.stringify(data, null, 2))
       const { registerGuest: registerGuestAPI } = await import('@/services/api/routeApi')
       const response = await registerGuestAPI(data)
+      console.log('✅ Réponse registerGuest:', response.data)
 
       // Sauvegarder dans le localStorage
       if (response.data?.data) {
@@ -79,7 +81,13 @@ export const registerGuest = createAsyncThunk(
 
       return response.data.data
     } catch (error: any) {
+      console.error('❌ Erreur registerGuest:', error)
+      console.error('📋 Détails erreur:', error.response?.data)
       const message = error.response?.data?.message || error.message || 'Erreur lors de l\'enregistrement'
+      const errorDetails = error.response?.data?.error || error.response?.data?.errors
+      if (errorDetails) {
+        console.error('🔍 Détails validation:', errorDetails)
+      }
       return rejectWithValue(message)
     }
   }

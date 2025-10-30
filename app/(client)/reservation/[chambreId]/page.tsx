@@ -77,6 +77,22 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
     }
   }, [room, guests])
 
+  // Logger les services sélectionnés et le prix total
+  useEffect(() => {
+    const servicesPrixOriginal = selectedServices.reduce((sum, s) => {
+      const prixUnitaire = s.prixSelectionne || s.prix || 0
+      const nombrePersonnes = s.nombrePersonnes || 1
+      return sum + (prixUnitaire * nombrePersonnes)
+    }, 0);
+    const servicesPrixAvecReduction = servicesPrixOriginal * 0.9;
+
+    if (selectedServices.length > 0) {
+      console.log('🧖 Services spa sélectionnés:', selectedServices);
+      console.log('💰 Prix des services spa (avant réduction):', servicesPrixOriginal.toFixed(2), '$');
+      console.log('💰 Prix des services spa (après réduction):', servicesPrixAvecReduction.toFixed(2), '$');
+    }
+  }, [selectedServices]);
+
   if (loading || !room) {
     return (
       <div className="min-h-screen pt-16 flex items-center justify-center">
@@ -126,7 +142,12 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
   })()
 
   // Pour l'affichage, on va juste ajouter les services avec réduction de 10%
-  const servicesPrixOriginal = selectedServices.reduce((sum, s) => sum + (s.prixSelectionne || s.prix || 0), 0)
+  // IMPORTANT : Multiplier le prix par le nombre de personnes
+  const servicesPrixOriginal = selectedServices.reduce((sum, s) => {
+    const prixUnitaire = s.prixSelectionne || s.prix || 0
+    const nombrePersonnes = s.nombrePersonnes || 1
+    return sum + (prixUnitaire * nombrePersonnes)
+  }, 0)
   const servicesPrix = servicesPrixOriginal * 0.9  // 10% de réduction sur les services spa
   const subtotal = chambrePrixTotal + servicesPrix
   const tps = subtotal * 0.05  // TPS 5%
@@ -141,17 +162,6 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
     { number: 2, title: 'Informations', icon: Users },
     { number: 3, title: 'Paiement', icon: CreditCard },
   ]
-    // Ajouter un useEffect pour loguer les services sélectionnés et le prix total
-useEffect(() => {
-  const servicesPrixOriginal = selectedServices.reduce((sum, s) => sum + (s.prixSelectionne || s.prix || 0), 0);
-  const servicesPrixAvecReduction = servicesPrixOriginal * 0.9; // 10% de réduction sur les services spa
-  const nouveauTotal = chambrePrixTotal + servicesPrixAvecReduction + tps + tvq;
-
-  console.log('🧖 Services spa sélectionnés:', selectedServices);
-  console.log('💰 Prix des services spa (avant réduction):', servicesPrixOriginal.toFixed(2), '$');
-  console.log('💰 Prix des services spa (après réduction):', servicesPrixAvecReduction.toFixed(2), '$');
-  console.log('💵 Nouveau total (chambre + services + taxes):', nouveauTotal.toFixed(2), '$');
-}, [selectedServices, chambrePrixTotal, tps, tvq]);
 
   const handleNext = async () => {
     if (currentStep < 3) {
@@ -329,8 +339,12 @@ if (currentStep === 2 && clientInfo) {
     const checkInISO = new Date(checkIn).toISOString();
     const checkOutISO = new Date(checkOut).toISOString();
 
-    // Calculer le prix des services spa
-    const servicesPrixOriginal = selectedServices.reduce((sum, s) => sum + (s.prixSelectionne || s.prix || 0), 0);
+    // Calculer le prix des services spa (avec multiplication par nombre de personnes)
+    const servicesPrixOriginal = selectedServices.reduce((sum, s) => {
+      const prixUnitaire = s.prixSelectionne || s.prix || 0
+      const nombrePersonnes = s.nombrePersonnes || 1
+      return sum + (prixUnitaire * nombrePersonnes)
+    }, 0);
     const servicesPrixAvecReduction = servicesPrixOriginal * 0.9; // 10% de réduction sur les services spa
 
     // Construire l'objet de réservation selon le format attendu par le backend
@@ -349,15 +363,22 @@ if (currentStep === 2 && clientInfo) {
       ...(clientInfo.commentaires && clientInfo.commentaires.trim() && { specialRequests: clientInfo.commentaires }),
       // Format exact attendu par le backend pour les services spa
       ...(selectedServices.length > 0 && {
-        spaServices: selectedServices.map((service) => ({
-          spaServiceId: service.id,
-          duree: service.dureeSelectionnee,
-          prix: (service.prixSelectionne || service.prix) * 0.9, // Prix avec réduction 10%
-          nombrePersonnes: service.nombrePersonnes || 1,
-          date: service.date || checkIn,
-          heure: service.heure || '10:00',
-          ...(service.notes && { notes: service.notes })
-        }))
+        spaServices: selectedServices.map((service) => {
+          const prixUnitaire = service.prixSelectionne || service.prix
+          const nombrePersonnes = service.nombrePersonnes || 1
+          const prixTotal = prixUnitaire * nombrePersonnes
+          const prixAvecReduction = prixTotal * 0.9 // Réduction 10%
+
+          return {
+            spaServiceId: service.id,
+            duree: service.dureeSelectionnee,
+            prix: prixAvecReduction, // Prix total (unitaire × personnes) avec réduction
+            nombrePersonnes: nombrePersonnes,
+            date: service.date || checkIn,
+            heure: service.heure || '10:00',
+            ...(service.notes && { notes: service.notes })
+          }
+        })
       })
     };
 
@@ -486,15 +507,22 @@ if (currentStep === 2 && clientInfo) {
           telephone: clientInfo?.telephone || '',
           adresse: clientInfo?.adresse || '',
         },
-        services: selectedServices.map(s => ({
-          nom: s.nom,
-          prix: (s.prixSelectionne || s.prix || 0) * 0.9,  // Prix avec réduction de 10%
-          prixOriginal: s.prixSelectionne || s.prix || 0,  // Prix original pour référence
-          duree: s.dureeSelectionnee,
-          nombrePersonnes: s.nombrePersonnes || 1,
-          date: s.date,
-          heure: s.heure,
-        })),
+        services: selectedServices.map(s => {
+          const prixUnitaire = s.prixSelectionne || s.prix || 0
+          const nombrePersonnes = s.nombrePersonnes || 1
+          const prixTotal = prixUnitaire * nombrePersonnes
+          const prixAvecReduction = prixTotal * 0.9
+
+          return {
+            nom: s.nom,
+            prix: prixAvecReduction,  // Prix avec réduction de 10% ET multiplié par nombre de personnes
+            prixOriginal: prixTotal,  // Prix original (sans réduction) pour référence
+            duree: s.dureeSelectionnee,
+            nombrePersonnes: nombrePersonnes,
+            date: s.date,
+            heure: s.heure,
+          }
+        }),
         subtotal,
         tps,
         tvq,
