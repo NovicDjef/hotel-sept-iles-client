@@ -1,0 +1,128 @@
+'use client'
+
+import React, { useState, useEffect, useRef } from 'react'
+import { ChatMessage } from './ChatMessage'
+import type { ChatMessage as ChatMessageType } from '@/types/chat'
+import { Send, Loader2 } from 'lucide-react'
+
+interface ChatWindowProps {
+  messages: ChatMessageType[]
+  guestName: string
+  onSendMessage: (message: string) => Promise<void>
+  isLoading: boolean
+  isPolling: boolean
+}
+
+/**
+ * Fenêtre de chat avec liste de messages et input
+ */
+export const ChatWindow: React.FC<ChatWindowProps> = ({
+  messages = [],
+  guestName,
+  onSendMessage,
+  isLoading,
+  isPolling,
+}) => {
+  const [inputMessage, setInputMessage] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Auto-scroll vers le bas quand de nouveaux messages arrivent
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Focus sur l'input au chargement
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!inputMessage.trim() || isLoading) return
+
+    const messageToSend = inputMessage.trim()
+    setInputMessage('') // Vider l'input immédiatement
+
+    try {
+      await onSendMessage(messageToSend)
+    } catch (err) {
+      // En cas d'erreur, restaurer le message
+      setInputMessage(messageToSend)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e as any)
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="bg-blue-600 text-white px-4 py-3 rounded-t-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold">Chat avec l'hôtel</h3>
+            <p className="text-xs text-blue-100">
+              {isPolling && (
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                  En ligne
+                </span>
+              )}
+            </p>
+          </div>
+          <p className="text-sm text-blue-100">{guestName}</p>
+        </div>
+      </div>
+
+      {/* Messages container */}
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-2">
+       {(!messages || messages.length === 0) ? (
+          <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+            Aucun message pour le moment
+          </div>
+        ) : (
+          messages.map((message) => (
+            <ChatMessage 
+            key={message.id} 
+            message={message}
+            />
+          ))
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input form */}
+      <div className="border-t bg-white p-4">
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Tapez votre message..."
+            disabled={isLoading}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={!inputMessage.trim() || isLoading}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}

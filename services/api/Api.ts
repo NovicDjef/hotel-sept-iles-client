@@ -15,6 +15,8 @@ const PUBLIC_ROUTES = [
   '/api/v1/reservations/availability', // Vérifier disponibilité chambres
   '/api/v1/reservations/guest', // Création réservation guest (public)
   '/api/v1/reviews/hotel',     // Avis publics d'un hôtel
+  '/api/v1/chat/start',        // Démarrer conversation chat
+  '/api/v1/chat/',             // Routes de chat publiques (messages, conversations)
 ]
 
 // Routes qui DEVRAIENT être publiques mais nécessitent un token côté backend actuellement

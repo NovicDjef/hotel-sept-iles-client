@@ -193,6 +193,7 @@ export function transformApiRoomToRoom(apiRoom: ApiRoom): Room {
     categorie,
     description: apiRoom.description || 'Chambre confortable et bien équipée',
     prix: apiRoom.basePrice,
+    prixWeekend: apiRoom.weekendPrice,
     capacite: apiRoom.capacity,
     superficie: apiRoom.size || 25, // Valeur par défaut si null
     images: apiRoom.images && apiRoom.images.length > 0

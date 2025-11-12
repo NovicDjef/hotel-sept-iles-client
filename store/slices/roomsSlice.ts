@@ -71,7 +71,7 @@ export const fetchRooms = createAsyncThunk(
           console.error(`❌ Erreur transformation ${index + 1}:`, err, rt)
           return null
         }
-      }).filter(Boolean) // Enlever les null
+      }).filter((room): room is Room => room !== null) // Enlever les null avec type guard
 
       console.log('✅ Chambres transformées (total):', transformedRooms.length, transformedRooms)
 

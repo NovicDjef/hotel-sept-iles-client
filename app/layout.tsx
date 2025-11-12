@@ -4,6 +4,7 @@ import './globals.css'
 import { Providers } from './providers'
 import { Navigation } from '@/components/layout/Navigation'
 import { Footer } from '@/components/layout/Footer'
+import { ChatWidget } from '@/components/chat'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -116,6 +117,7 @@ export default function RootLayout({
             </main>
             <Footer />
           </div>
+          <ChatWidget />
         </Providers>
       </body>
     </html>

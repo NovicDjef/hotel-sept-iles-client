@@ -52,6 +52,7 @@ export default function ReservationPage({ params }: { params: Promise<{ chambreI
   const [selectedServices, setSelectedServices] = useState<any[]>([])
   const [clientInfo, setClientInfo] = useState<any>(null)
   const [reservationId, setReservationId] = useState<string | null>(null)
+  const [guestIdState, setGuestIdState] = useState<string | null>(null)  // Pour sauvegarder le guestId de l'étape 2
   const [paymentProcessing, setPaymentProcessing] = useState(false)
   const [calculatedPrice, setCalculatedPrice] = useState<any>(null)
   const [stripePromise] = useState(() => typeof window !== 'undefined' ? getStripe() : null)
@@ -387,18 +388,29 @@ if (currentStep === 2 && clientInfo) {
 
     // ÉTAPE 2.1 : Créer la réservation PENDING
     const response = await createGuestReservation(reservationData);
-    console.log('✅ Réservation PENDING créée:', response.data.data);
+    console.log('✅ Réservation PENDING créée - RÉPONSE COMPLÈTE:', JSON.stringify(response.data, null, 2));
 
-    // Extraire l'ID de la réservation
+    // Extraire l'ID de la réservation et du client
     const responseData = response.data.data;
     const newReservationId = responseData.reservation?.id || responseData.id;
+    const newGuestId = responseData.guest?.id || responseData.guestId || responseData.reservation?.guestId || responseData.reservation?.guest?.id;
 
     if (!newReservationId) {
       throw new Error('ID de réservation non trouvé dans la réponse');
     }
 
+    console.log('🔑 Reservation ID extrait:', newReservationId);
+    console.log('👤 Guest ID extrait:', newGuestId);
+    console.log('📊 Structure responseData:', Object.keys(responseData));
+    if (responseData.reservation) {
+      console.log('📊 Structure reservation:', Object.keys(responseData.reservation));
+    }
+    if (responseData.guest) {
+      console.log('📊 Structure guest:', Object.keys(responseData.guest));
+    }
+
     setReservationId(newReservationId);
-    console.log('🔑 Reservation ID stocké:', newReservationId);
+    setGuestIdState(newGuestId || null);  // Sauvegarder le guestId pour l'utiliser à l'étape 3
     console.log('✅ Réservation créée avec services spa inclus (gérés par le backend)');
 
     // NOTE: Les services spa sont maintenant gérés directement par le backend
@@ -483,13 +495,27 @@ if (currentStep === 2 && clientInfo) {
       })
 
       const confirmedReservation = response.data.data
-      console.log('✅ Paiement confirmé, réservation:', confirmedReservation)
+      console.log('✅ Paiement confirmé - RÉPONSE COMPLÈTE:', JSON.stringify(response.data, null, 2))
       console.log('🔍 Structure de la réservation confirmée:', Object.keys(confirmedReservation))
       console.log('📋 reservationNumber:', confirmedReservation.reservationNumber)
+      console.log('🆔 confirmedReservation.id:', confirmedReservation.id)
+      console.log('👤 confirmedReservation.guest:', confirmedReservation.guest)
+      console.log('👤 confirmedReservation.guestId:', confirmedReservation.guestId)
+
+      // Extraire les IDs correctement
+      const extractedReservationNumber = confirmedReservation.reservationNumber || confirmedReservation.id || reservationId
+      const extractedGuestId = guestIdState  // Priorité au guestId sauvegardé à l'étape 2
+        || confirmedReservation.guest?.id
+        || confirmedReservation.guestId
+
+      console.log('✅ ID Réservation extrait:', extractedReservationNumber)
+      console.log('✅ ID Client extrait:', extractedGuestId)
+      console.log('📌 guestIdState (étape 2):', guestIdState)
 
       // Générer le reçu PDF
       const receiptData = {
-        reservationNumber: confirmedReservation.reservationNumber || confirmedReservation.id || 'N/A',
+        reservationNumber: extractedReservationNumber || 'N/A',
+        guestId: extractedGuestId || 'N/A',  // ID unique du client
         date: new Date().toLocaleDateString('fr-CA'),
         chambre: {
           nom: chambre.nom,
@@ -505,7 +531,6 @@ if (currentStep === 2 && clientInfo) {
           prenom: clientInfo?.prenom || '',
           email: clientInfo?.email || '',
           telephone: clientInfo?.telephone || '',
-          adresse: clientInfo?.adresse || '',
         },
         services: selectedServices.map(s => {
           const prixUnitaire = s.prixSelectionne || s.prix || 0
@@ -519,8 +544,6 @@ if (currentStep === 2 && clientInfo) {
             prixOriginal: prixTotal,  // Prix original (sans réduction) pour référence
             duree: s.dureeSelectionnee,
             nombrePersonnes: nombrePersonnes,
-            date: s.date,
-            heure: s.heure,
           }
         }),
         subtotal,
@@ -528,6 +551,8 @@ if (currentStep === 2 && clientInfo) {
         tvq,
         total,
       }
+
+            console.log('🧾 Données du reçu PDF:', receiptData)
 
       // Télécharger le reçu PDF
       console.log('📄 Génération du reçu PDF...')
@@ -541,9 +566,8 @@ if (currentStep === 2 && clientInfo) {
       }
 
       // Afficher un message de succès
-      const resNumber = confirmedReservation.reservationNumber || confirmedReservation.id || 'inconnu'
       console.log('💬 Affichage du message de succès...')
-      alert(`✅ Paiement confirmé avec succès !\n\n📄 Votre reçu (N° ${resNumber}) a été téléchargé.\n\n🏠 Redirection vers l'accueil dans quelques instants...`)
+      alert(`✅ Paiement confirmé avec succès !\n\n📄 Votre reçu (N° ${extractedReservationNumber}) a été téléchargé.\n\n🏠 Redirection vers l'accueil dans quelques instants...`)
 
       // Attendre 2 secondes puis rediriger vers l'accueil
       console.log('🔄 Préparation de la redirection...')

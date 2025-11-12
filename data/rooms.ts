@@ -4,9 +4,11 @@ export const rooms: Room[] = [
   {
     id: '1',
     nom: 'Suite Royale',
+    type: 'SUITE',
     categorie: 'Premium',
     description: 'Notre suite la plus luxueuse avec vue panoramique sur le fleuve Saint-Laurent',
     prix: 299,
+    prixWeekend: 349,
     capacite: 2,
     superficie: 45,
     images: [
@@ -23,9 +25,11 @@ export const rooms: Room[] = [
   {
     id: '2',
     nom: 'Chambre Deluxe',
+    type: 'DELUXE',
     categorie: 'Standard',
     description: 'Confort moderne avec tout l\'équipement nécessaire pour un séjour agréable',
     prix: 189,
+    prixWeekend: 219,
     capacite: 2,
     superficie: 32,
     images: [
@@ -42,9 +46,11 @@ export const rooms: Room[] = [
   {
     id: '3',
     nom: 'Suite Familiale',
+    type: 'FAMILY',
     categorie: 'Famille',
     description: 'Espace généreux parfait pour toute la famille avec deux chambres séparées',
     prix: 249,
+    prixWeekend: 289,
     capacite: 4,
     superficie: 55,
     images: [
@@ -61,9 +67,11 @@ export const rooms: Room[] = [
   {
     id: '4',
     nom: 'Chambre Confort',
+    type: 'STANDARD',
     categorie: 'Standard',
     description: 'Parfaite pour un séjour court, offrant tout le confort essentiel',
     prix: 149,
+    prixWeekend: 169,
     capacite: 2,
     superficie: 28,
     images: [
@@ -78,9 +86,11 @@ export const rooms: Room[] = [
   {
     id: '5',
     nom: 'Suite Exécutive',
+    type: 'EXECUTIVE',
     categorie: 'Business',
     description: 'Idéale pour les voyageurs d\'affaires avec espace de travail dédié',
     prix: 269,
+    prixWeekend: 309,
     capacite: 2,
     superficie: 40,
     images: [
@@ -95,9 +105,11 @@ export const rooms: Room[] = [
   {
     id: '6',
     nom: 'Suite Panoramique',
+    type: 'SUITE',
     categorie: 'Premium',
     description: 'Vue spectaculaire à 180° sur le fleuve et les montagnes',
     prix: 329,
+    prixWeekend: 389,
     capacite: 2,
     superficie: 50,
     images: [
