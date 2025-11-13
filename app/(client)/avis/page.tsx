@@ -99,18 +99,40 @@ const avisInitiaux: AvisData[] = [
 // Fonction pour transformer les avis de l'API vers le format AvisData
 const transformApiReview = (apiReview: any): AvisData => {
   // Extraire les photos (string CSV vers array)
-  const photos = apiReview.photos ? apiReview.photos.split(',').map((p: string) => p.trim()) : []
+  let photos: string[] = []
+  if (apiReview.photos) {
+    if (Array.isArray(apiReview.photos)) {
+      photos = apiReview.photos
+    } else if (typeof apiReview.photos === 'string') {
+      photos = apiReview.photos.split(',').map((p: string) => p.trim()).filter(Boolean)
+    }
+  }
+
+  // Gérer la date de création
+  let dateFormatted = new Date().toISOString().split('T')[0]
+  try {
+    if (apiReview.createdAt) {
+      dateFormatted = new Date(apiReview.createdAt).toISOString().split('T')[0]
+    }
+  } catch (e) {
+    console.warn('Date invalide pour l\'avis:', apiReview.id)
+  }
+
+  // Gérer la note
+  console.log('🔍 Type de overallRating:', typeof apiReview.overallRating, 'Valeur:', apiReview.overallRating)
+  const note = Number(apiReview.overallRating) || 5
+  console.log('✅ Note convertie:', note, 'Type:', typeof note)
 
   return {
-    id: apiReview.id,
+    id: apiReview.id || Date.now(),
     auteur: `${apiReview.guest?.firstName || 'Anonyme'} ${apiReview.guest?.lastName || ''}`.trim(),
     avatar: apiReview.guest?.avatar || '/images/avatars/default.svg',
-    note: apiReview.overallRating,
-    date: new Date(apiReview.createdAt).toISOString().split('T')[0], // Format YYYY-MM-DD
+    note: note,
+    date: dateFormatted,
     sejour: apiReview.stayDate || 'Date inconnue',
     chambre: apiReview.roomName || 'Chambre',
-    titre: apiReview.title,
-    commentaire: apiReview.comment,
+    titre: apiReview.title || 'Sans titre',
+    commentaire: apiReview.comment || '',
     photos: photos,
     utile: apiReview.helpfulCount || 0,
     reponseHotel: apiReview.hotelResponse || null
@@ -149,12 +171,24 @@ export default function AvisPage() {
         console.log('✅ Avis reçus:', reviewsResponse.data)
         console.log('📊 Stats reçues:', statsResponse.data)
 
-        // Transformer les avis
-        const transformedReviews = reviewsResponse.data.data.map(transformApiReview)
+        // Transformer les avis (gérer les différentes structures de réponse)
+        const reviewsData = reviewsResponse.data?.data || reviewsResponse.data || []
+        console.log('📋 Type de reviewsData:', typeof reviewsData, 'Is array:', Array.isArray(reviewsData))
+        console.log('📋 reviewsData:', reviewsData)
+
+        const transformedReviews = Array.isArray(reviewsData)
+          ? reviewsData.map((review, index) => {
+              console.log(`🔄 Transformation avis ${index}:`, review)
+              const transformed = transformApiReview(review)
+              console.log(`✅ Avis transformé ${index}:`, transformed)
+              return transformed
+            })
+          : []
+        console.log('📝 Total avis transformés:', transformedReviews.length)
         setAvis(transformedReviews)
 
-        // Mettre à jour les stats
-        const stats = statsResponse.data.data
+        // Mettre à jour les stats (gérer les différentes structures de réponse)
+        const stats = statsResponse.data?.data || statsResponse.data || {}
         setNotesMoyenne(stats.averageRating || 0)
         setTotalAvis(stats.totalReviews || 0)
         setDistribution(stats.ratingDistribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 })
@@ -176,10 +210,39 @@ export default function AvisPage() {
     fetchReviews()
   }, [])
 
-  const handleNewAvis = (newAvis: AvisData) => {
-    setAvis([newAvis, ...avis])
+  const handleNewAvis = async (newAvis: AvisData) => {
+    // Fermer le formulaire
     setShowForm(false)
-    // Scroll vers le haut pour voir le nouveau commentaire
+
+    // Recharger les avis depuis l'API pour avoir les données à jour
+    try {
+      console.log('🔄 Rechargement des avis après soumission...')
+      const [reviewsResponse, statsResponse] = await Promise.all([
+        getHotelReviews(hotelId),
+        getHotelReviewsStats(hotelId)
+      ])
+
+      // Transformer les avis
+      const reviewsData = reviewsResponse.data?.data || reviewsResponse.data || []
+      const transformedReviews = Array.isArray(reviewsData)
+        ? reviewsData.map(transformApiReview)
+        : []
+      setAvis(transformedReviews)
+
+      // Mettre à jour les stats
+      const stats = statsResponse.data?.data || statsResponse.data || {}
+      setNotesMoyenne(stats.averageRating || 0)
+      setTotalAvis(stats.totalReviews || 0)
+      setDistribution(stats.ratingDistribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 })
+
+      console.log('✅ Avis rechargés avec succès')
+    } catch (err) {
+      console.error('❌ Erreur rechargement avis:', err)
+      // En cas d'erreur, ajouter simplement le nouvel avis en haut
+      setAvis([newAvis, ...avis])
+    }
+
+    // Scroll vers le haut pour voir les avis
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 

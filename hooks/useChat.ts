@@ -72,7 +72,10 @@ export const useChat = () => {
           message: messageText,
           senderType: 'GUEST',
           senderName: guestName,
+          // hotelId n'est pas nécessaire car déjà dans la conversation
         }
+
+        console.log('📤 Envoi du message avec les données:', messageData)
 
         const response = await chatApi.sendMessage(conversationId, messageData)
 
@@ -103,12 +106,42 @@ export const useChat = () => {
       const response = await chatApi.getMessages(conversationId)
 
       if (response.success) {
-        setMessages(response.data.messages)
-        setConversation(response.data.conversation)
+        // Ne mettre à jour que si les messages ont changé pour éviter les re-renders inutiles
+        setMessages(prevMessages => {
+          // S'assurer que prevMessages est un tableau
+          const prev = prevMessages || []
+          const newMessages = response.data.messages || []
+
+          // Vérification rapide par longueur
+          if (prev.length !== newMessages.length) {
+            return newMessages
+          }
+
+          // Si même longueur, vérifier si le dernier message est différent
+          if (newMessages.length > 0 && prev.length > 0) {
+            const prevLastId = prev[prev.length - 1]?.id
+            const newLastId = newMessages[newMessages.length - 1]?.id
+
+            if (prevLastId !== newLastId) {
+              return newMessages
+            }
+          }
+
+          // Aucun changement détecté, garder les messages précédents
+          return prev
+        })
+
+        // Mise à jour silencieuse de la conversation sans causer de re-render
+        setConversation(prev => {
+          if (!prev || prev.id !== response.data.conversation.id) {
+            return response.data.conversation
+          }
+          return prev
+        })
       }
     } catch (err: any) {
-      console.error('Erreur lors de la récupération des messages:', err)
       // Ne pas afficher d'erreur pour le polling silencieux
+      // Cela évite les logs d'erreur inutiles lors du polling en arrière-plan
     }
   }, [conversationId])
 
@@ -116,18 +149,20 @@ export const useChat = () => {
    * Démarre le polling des messages
    */
   const startPolling = useCallback(() => {
-    if (isPolling || !conversationId) return
+    // Vérifier si le polling est déjà actif via la ref
+    if (pollingIntervalRef.current) return
+    if (!conversationId) return
 
     setIsPolling(true)
 
     // Premier fetch immédiat
     fetchMessages()
 
-    // Polling toutes les 3 secondes
+    // Polling toutes les 10 secondes (réduit pour éviter les saccades visibles)
     pollingIntervalRef.current = setInterval(() => {
       fetchMessages()
-    }, 3000)
-  }, [conversationId, fetchMessages, isPolling])
+    }, 10000)
+  }, [conversationId, fetchMessages])
 
   /**
    * Arrête le polling
@@ -190,9 +225,13 @@ export const useChat = () => {
   // Cleanup au démontage
   useEffect(() => {
     return () => {
-      stopPolling()
+      // Cleanup direct sans dépendre de stopPolling
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
+      }
     }
-  }, [stopPolling])
+  }, [])
 
   return {
     conversationId,

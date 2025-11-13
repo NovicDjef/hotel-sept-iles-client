@@ -249,7 +249,7 @@ const servicesSlice = createSlice({
       state.certificats = action.payload
     })
     builder.addCase(fetchCertificats.rejected, (state, action) => {
-      console.error('Erreur certificats:', action.payload)
+      // Erreur silencieuse - pas besoin de logger
     })
 
     // fetchSpaCategories
@@ -257,7 +257,7 @@ const servicesSlice = createSlice({
       state.categories = action.payload
     })
     builder.addCase(fetchSpaCategories.rejected, (state, action) => {
-      console.error('Erreur catégories:', action.payload)
+      // Erreur silencieuse - pas besoin de logger
     })
 
     // fetchAllSpaData

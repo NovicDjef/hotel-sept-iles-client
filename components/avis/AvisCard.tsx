@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Star, ThumbsUp, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
+import { markReviewAsHelpful } from '@/services/api/routeApi'
 
 export interface AvisData {
   id: number
@@ -29,11 +30,35 @@ export function AvisCard({ avis, index }: AvisCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [hasLiked, setHasLiked] = useState(false)
   const [likesCount, setLikesCount] = useState(avis.utile)
+  const [isLiking, setIsLiking] = useState(false)
 
-  const handleLike = () => {
-    if (!hasLiked) {
+  // S'assurer que la note est un nombre
+  const noteValue = typeof avis.note === 'number' ? avis.note : Number(avis.note) || 5
+
+  const handleLike = async () => {
+    if (hasLiked || isLiking) return
+
+    try {
+      setIsLiking(true)
+
+      // S'assurer qu'on a l'authentification guest
+      const { ensureGuestAuth } = await import('@/services/auth/guestAuth')
+      await ensureGuestAuth()
+
+      // Marquer comme utile via l'API
+      await markReviewAsHelpful(String(avis.id))
+
+      // Mettre à jour l'état local
       setLikesCount(prev => prev + 1)
       setHasLiked(true)
+
+      console.log('✅ Avis marqué comme utile')
+    } catch (error: any) {
+      console.error('❌ Erreur lors du marquage comme utile:', error)
+      // Si erreur, permettre de réessayer
+      // Ne pas changer hasLiked ni likesCount
+    } finally {
+      setIsLiking(false)
     }
   }
 
@@ -95,14 +120,14 @@ export function AvisCard({ avis, index }: AvisCardProps) {
                   <Star
                     key={i}
                     className={`h-4 w-4 transition-all ${
-                      i < avis.note
+                      i < noteValue
                         ? 'text-yellow-500 fill-yellow-500'
                         : 'text-neutral-300'
                     }`}
                   />
                 ))}
                 <span className="ml-1.5 text-sm font-bold text-neutral-900">
-                  {avis.note}.0
+                  {noteValue}.0
                 </span>
               </div>
             </div>
@@ -158,15 +183,17 @@ export function AvisCard({ avis, index }: AvisCardProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleLike}
-            disabled={hasLiked}
+            disabled={hasLiked || isLiking}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all ${
               hasLiked
                 ? 'bg-primary-50 text-primary-600'
+                : isLiking
+                ? 'bg-neutral-50 text-neutral-400 cursor-wait'
                 : 'bg-neutral-50 text-neutral-600 hover:bg-primary-50 hover:text-primary-600'
             }`}
           >
-            <ThumbsUp className={`h-4 w-4 ${hasLiked ? 'fill-current' : ''}`} />
-            <span>Utile ({likesCount})</span>
+            <ThumbsUp className={`h-4 w-4 ${hasLiked ? 'fill-current' : ''} ${isLiking ? 'animate-pulse' : ''}`} />
+            <span>{isLiking ? 'Envoi...' : `Utile (${likesCount})`}</span>
           </motion.button>
         </div>
 

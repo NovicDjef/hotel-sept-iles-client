@@ -10,7 +10,8 @@
       "Bash(wc:*)",
       "Bash(npx tsc:*)",
       "Bash(awk:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(lsof:*)"
     ],
     "deny": [],
     "ask": []

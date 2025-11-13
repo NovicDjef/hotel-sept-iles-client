@@ -86,7 +86,7 @@ export function Footer() {
             {/* Réseaux sociaux */}
             <div className="flex gap-3">
               <a
-                href="https://www.facebook.com/Spa7iles"
+                href="https://www.facebook.com/hotel7iles"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm transition-all hover:bg-white/20 hover:scale-110"

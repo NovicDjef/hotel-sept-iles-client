@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  MapPin, 
-  Phone, 
-  Mail, 
+import {
+  MapPin,
+  Phone,
+  Mail,
   Clock,
   Send,
   MessageCircle,
@@ -13,6 +13,7 @@ import {
   Instagram,
   CheckCircle
 } from 'lucide-react'
+import { openChatWidget } from '@/utils/chatUtils'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -319,7 +320,10 @@ export default function ContactPage() {
                 <p className="text-white/90 text-sm mb-4">
                   Besoin d'une réponse immédiate ? Discutez avec notre équipe en temps réel.
                 </p>
-                <button className="btn-gold w-full justify-center bg-white text-primary-600 hover:bg-neutral-50">
+                <button
+                  onClick={openChatWidget}
+                  className="btn-gold w-full justify-center bg-white text-primary-600 hover:bg-neutral-50"
+                >
                   <MessageCircle className="h-4 w-4" />
                   Démarrer le chat
                 </button>
@@ -332,7 +336,7 @@ export default function ContactPage() {
                 </h3>
                 <div className="flex gap-3">
                   <a
-                    href="https://www.facebook.com/Spa7iles"
+                    href="https://www.facebook.com/hotel7iles"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors"

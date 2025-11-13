@@ -219,6 +219,10 @@ img {
   .shadow-glow-gold {
     box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
   }
+
+  .shadow-glow-blue {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
 }
 
 /* Utilitaires */

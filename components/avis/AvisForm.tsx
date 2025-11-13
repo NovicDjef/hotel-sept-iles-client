@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Star, Upload, X, Send, User, Mail } from 'lucide-react'
+import { Star, Upload, X, Send, User, Mail, CheckCircle, AlertCircle } from 'lucide-react'
 import Image from 'next/image'
+import { createReview } from '@/services/api/routeApi'
+import { hotelId } from '@/services/api/Api'
 
 interface AvisFormProps {
   onSubmit?: (avis: any) => void
@@ -20,6 +22,8 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
   })
   const [photos, setPhotos] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
 
   const chambres = [
     'Suite Royale',
@@ -33,38 +37,79 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setSubmitStatus('idle')
+    setErrorMessage('')
 
-    // Simuler l'envoi
-    setTimeout(() => {
-      if (onSubmit) {
+    try {
+      // S'assurer qu'on a l'authentification guest
+      const { ensureGuestAuth } = await import('@/services/auth/guestAuth')
+      await ensureGuestAuth()
+
+      // Préparer les données pour l'API
+      const reviewData = {
+        hotelId: hotelId,
+        roomName: formData.chambre,
+        stayDate: new Date().toLocaleDateString('fr-CA', { month: 'long', year: 'numeric' }),
+        overallRating: formData.note,
+        title: formData.titre,
+        comment: formData.commentaire,
+        photos: photos.length > 0 ? photos : undefined,
+      }
+
+      console.log('📤 Envoi de l\'avis:', reviewData)
+
+      // Envoyer l'avis à l'API
+      const response = await createReview(reviewData)
+
+      console.log('✅ Avis créé avec succès:', response.data)
+
+      setSubmitStatus('success')
+
+      // Notifier le parent si callback fourni
+      if (onSubmit && response.data?.data) {
         const newAvis = {
-          ...formData,
-          id: Date.now(),
-          date: new Date().toISOString(),
+          id: response.data.data.id,
+          auteur: formData.auteur,
+          email: formData.email,
           avatar: '/images/avatars/default.svg',
+          note: formData.note,
+          date: new Date().toISOString(),
+          sejour: reviewData.stayDate,
+          chambre: formData.chambre,
+          titre: formData.titre,
+          commentaire: formData.commentaire,
           photos: photos,
           utile: 0,
-          sejour: new Date().toLocaleDateString('fr-CA', { month: 'long', year: 'numeric' }),
           reponseHotel: null,
         }
         onSubmit(newAvis)
-
-        // Afficher une notification de succès
-        alert('✅ Merci ! Votre avis a été publié avec succès.')
       }
 
-      // Réinitialiser le formulaire
-      setFormData({
-        auteur: '',
-        email: '',
-        chambre: '',
-        note: 5,
-        titre: '',
-        commentaire: '',
-      })
-      setPhotos([])
+      // Réinitialiser le formulaire après 2 secondes
+      setTimeout(() => {
+        setFormData({
+          auteur: '',
+          email: '',
+          chambre: '',
+          note: 5,
+          titre: '',
+          commentaire: '',
+        })
+        setPhotos([])
+        setSubmitStatus('idle')
+      }, 2000)
+
+    } catch (error: any) {
+      console.error('❌ Erreur lors de la création de l\'avis:', error)
+      setSubmitStatus('error')
+      setErrorMessage(
+        error.response?.data?.message ||
+        error.message ||
+        'Une erreur est survenue lors de l\'envoi de votre avis. Veuillez réessayer.'
+      )
+    } finally {
       setIsSubmitting(false)
-    }, 1500)
+    }
   }
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,6 +144,34 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
             Votre avis nous aide à améliorer nos services et guide les futurs clients
           </p>
         </div>
+
+        {/* Messages de statut */}
+        {submitStatus === 'success' && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3"
+          >
+            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+            <p className="text-sm text-green-700">
+              ✅ Merci ! Votre avis a été envoyé avec succès et sera publié après modération.
+            </p>
+          </motion.div>
+        )}
+
+        {submitStatus === 'error' && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center gap-3"
+          >
+            <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+            <div className="text-sm text-red-700">
+              <p className="font-semibold">Erreur lors de l'envoi</p>
+              <p>{errorMessage}</p>
+            </div>
+          </motion.div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Nom et Email */}

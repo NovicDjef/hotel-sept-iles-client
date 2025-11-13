@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { ChatMessage } from './ChatMessage'
 import type { ChatMessage as ChatMessageType } from '@/types/chat'
 import { Send, Loader2 } from 'lucide-react'
@@ -15,6 +15,7 @@ interface ChatWindowProps {
 
 /**
  * Fenêtre de chat avec liste de messages et input
+ * Optimisé pour éviter les re-renders inutiles
  */
 export const ChatWindow: React.FC<ChatWindowProps> = ({
   messages = [],
@@ -26,11 +27,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   const [inputMessage, setInputMessage] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const previousMessageCountRef = useRef(messages.length)
 
-  // Auto-scroll vers le bas quand de nouveaux messages arrivent
+  // Auto-scroll vers le bas seulement quand de NOUVEAUX messages arrivent
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    const currentCount = messages.length
+    const previousCount = previousMessageCountRef.current
+
+    // Scroll uniquement si le nombre de messages a augmenté
+    if (currentCount > previousCount) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+
+    // Mettre à jour la référence
+    previousMessageCountRef.current = currentCount
+  }, [messages.length]) // Dépend uniquement de la longueur, pas de tout le tableau
 
   // Focus sur l'input au chargement
   useEffect(() => {
@@ -60,40 +71,47 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   }
 
+  // Mémoriser le header pour éviter les re-renders
+  const chatHeader = useMemo(() => (
+    <div className="bg-blue-600 text-white px-4 py-3 rounded-t-lg">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold">Chat avec l'hôtel</h3>
+          <p className="text-xs text-blue-100">
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+              En ligne
+            </span>
+          </p>
+        </div>
+        <p className="text-sm text-blue-100">{guestName}</p>
+      </div>
+    </div>
+  ), [guestName]) // Ne se re-rend que si guestName change
+
+  // Mémoriser la liste des messages pour éviter les re-renders
+  const messagesList = useMemo(() => {
+    if (!messages || messages.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+          Aucun message pour le moment
+        </div>
+      )
+    }
+
+    return messages.map((message) => (
+      <ChatMessage key={message.id} message={message} />
+    ))
+  }, [messages]) // Ne se re-rend que si les messages changent
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="bg-blue-600 text-white px-4 py-3 rounded-t-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold">Chat avec l'hôtel</h3>
-            <p className="text-xs text-blue-100">
-              {isPolling && (
-                <span className="flex items-center gap-1">
-                  <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                  En ligne
-                </span>
-              )}
-            </p>
-          </div>
-          <p className="text-sm text-blue-100">{guestName}</p>
-        </div>
-      </div>
+      {chatHeader}
 
       {/* Messages container */}
       <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-2">
-       {(!messages || messages.length === 0) ? (
-          <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-            Aucun message pour le moment
-          </div>
-        ) : (
-          messages.map((message) => (
-            <ChatMessage 
-            key={message.id} 
-            message={message}
-            />
-          ))
-        )}
+        {messagesList}
         <div ref={messagesEndRef} />
       </div>
 
@@ -125,4 +143,28 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       </div>
     </div>
   )
-}
+}, (prevProps, nextProps) => {
+  // Ne re-render que si les messages ont vraiment changé (comparaison par longueur et dernier ID)
+  if (prevProps.messages.length !== nextProps.messages.length) {
+    return false // Re-render car le nombre de messages a changé
+  }
+
+  // Vérifier si le dernier message est différent
+  if (prevProps.messages.length > 0 && nextProps.messages.length > 0) {
+    const prevLastMessage = prevProps.messages[prevProps.messages.length - 1]
+    const nextLastMessage = nextProps.messages[nextProps.messages.length - 1]
+
+    if (prevLastMessage?.id !== nextLastMessage?.id) {
+      return false // Re-render car le dernier message est différent
+    }
+  }
+
+  // Vérifier les autres props
+  if (prevProps.isLoading !== nextProps.isLoading ||
+      prevProps.isPolling !== nextProps.isPolling ||
+      prevProps.guestName !== nextProps.guestName) {
+    return false // Re-render car les props ont changé
+  }
+
+  return true // Ne pas re-render
+})

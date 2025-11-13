@@ -41,13 +41,24 @@ class ChatApiService {
     data: SendMessageData
   ): Promise<MessagesResponse> {
     try {
+      console.log('📤 Envoi message au backend:')
+      console.log('  - ConversationId:', conversationId)
+      console.log('  - Data:', data)
+      console.log('  - URL:', `${this.baseUrl}/${conversationId}/messages`)
+
       const response = await apiService.post<MessagesResponse>(
         `${this.baseUrl}/${conversationId}/messages`,
         data
       )
+
+      console.log('✅ Réponse du backend:', response.data)
       return response.data
-    } catch (error) {
-      console.error('Erreur lors de l\'envoi du message:', error)
+    } catch (error: any) {
+      console.error('❌ Erreur lors de l\'envoi du message:')
+      console.error('  - Status:', error.response?.status)
+      console.error('  - Message:', error.response?.data?.message)
+      console.error('  - Data:', error.response?.data)
+      console.error('  - Full error:', error)
       throw error
     }
   }

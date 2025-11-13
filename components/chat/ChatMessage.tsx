@@ -11,16 +11,17 @@ interface ChatMessageProps {
 
 /**
  * Composant pour afficher un message de chat
+ * Mémorisé pour éviter les re-renders inutiles
  */
-export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+export const ChatMessage = React.memo<ChatMessageProps>(({ message }) => {
   const isGuest = message.senderType === 'GUEST'
 
   return (
     <div
-      className={`flex ${isGuest ? 'justify-end' : 'justify-start'} mb-4 animate-fade-in`}
+      className={`flex ${isGuest ? 'justify-end' : 'justify-start'} mb-4`}
     >
       <div
-        className={`max-w-[75%] rounded-lg px-4 py-2 ${
+        className={`max-w-[75%] rounded-lg px-4 py-2 transition-all ${
           isGuest
             ? 'bg-blue-600 text-white rounded-br-none'
             : 'bg-gray-200 text-gray-800 rounded-bl-none'
@@ -42,4 +43,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       </div>
     </div>
   )
-}
+}, (prevProps, nextProps) => {
+  // Ne re-render que si l'ID du message change
+  return prevProps.message.id === nextProps.message.id
+})

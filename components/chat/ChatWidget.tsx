@@ -41,20 +41,36 @@ export const ChatWidget: React.FC = () => {
     }
   }, [restoreConversation])
 
+  // Écouter l'événement d'ouverture du chat depuis d'autres composants
+  useEffect(() => {
+    const handleOpenChat = () => {
+      setIsOpen(true)
+    }
+
+    window.addEventListener('openChat', handleOpenChat)
+
+    return () => {
+      window.removeEventListener('openChat', handleOpenChat)
+    }
+  }, [])
+
   // Démarrer le polling quand une conversation est active
   useEffect(() => {
     if (conversationId && isOpen && !isPolling) {
       startPolling()
-    }
-
-    if (!isOpen && isPolling) {
+    } else if (!isOpen && isPolling) {
       stopPolling()
     }
+  }, [conversationId, isOpen]) // Retirer isPolling, startPolling, stopPolling des dépendances pour éviter la boucle
 
+  // Cleanup au démontage du composant
+  useEffect(() => {
     return () => {
-      stopPolling()
+      if (isPolling) {
+        stopPolling()
+      }
     }
-  }, [conversationId, isOpen, isPolling, startPolling, stopPolling])
+  }, []) // Cleanup une seule fois au démontage
 
   const handleStartChat = async (data: StartChatData) => {
     try {
