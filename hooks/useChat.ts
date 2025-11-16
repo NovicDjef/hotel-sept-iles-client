@@ -67,6 +67,22 @@ export const useChat = () => {
       setIsLoading(true)
       setError(null)
 
+      // Message optimiste - afficher immédiatement avant la réponse du serveur
+      const optimisticMessage = {
+        id: `temp-${Date.now()}`,
+        conversationId: conversationId,
+        message: messageText,
+        senderType: 'GUEST' as const,
+        senderName: guestName,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+
+      // Ajouter le message optimiste immédiatement
+      setMessages(prevMessages => [...(prevMessages || []), optimisticMessage])
+      console.log('✅ Message optimiste ajouté:', optimisticMessage)
+
       try {
         const messageData: SendMessageData = {
           message: messageText,
@@ -76,21 +92,36 @@ export const useChat = () => {
         }
 
         console.log('📤 Envoi du message avec les données:', messageData)
+        console.log('📤 ConversationId:', conversationId)
 
         const response = await chatApi.sendMessage(conversationId, messageData)
 
+        console.log('📥 Réponse reçue du serveur:', response)
+
         if (response.success) {
+          console.log('✅ Mise à jour avec les messages du serveur:', response.data.messages)
+          // Remplacer le message optimiste par les vrais messages du serveur
           setMessages(response.data.messages)
           return response.data.messages
         } else {
           throw new Error(response.message || 'Erreur lors de l\'envoi du message')
         }
       } catch (err: any) {
+        console.error('❌ Erreur complète:', err)
+        console.error('❌ Erreur response:', err?.response)
+        console.error('❌ Erreur data:', err?.response?.data)
+
+        // En cas d'erreur, retirer le message optimiste
+        setMessages(prevMessages =>
+          (prevMessages || []).filter(msg => msg.id !== optimisticMessage.id)
+        )
+
         const errorMessage = err?.response?.data?.message || err.message || 'Erreur de connexion'
         setError(errorMessage)
         throw err
       } finally {
         setIsLoading(false)
+        console.log('🏁 Envoi terminé')
       }
     },
     [conversationId]
