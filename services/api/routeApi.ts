@@ -44,7 +44,7 @@ export const getAllChambres = () => {
  * Récupère une chambre par son ID
  */
 export const getChambreById = (id: number) => {
-  return apiService.get<Room>(`/chambres/${id}`)
+  return apiService.get<Room>(`/room-types/${id}`)
 }
 
 /**
