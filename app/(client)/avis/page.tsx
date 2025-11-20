@@ -97,45 +97,127 @@ const avisInitiaux: AvisData[] = [
 ]
 
 // Fonction pour transformer les avis de l'API vers le format AvisData
-const transformApiReview = (apiReview: any): AvisData => {
-  // Extraire les photos (string CSV vers array)
-  let photos: string[] = []
-  if (apiReview.photos) {
-    if (Array.isArray(apiReview.photos)) {
-      photos = apiReview.photos
-    } else if (typeof apiReview.photos === 'string') {
-      photos = apiReview.photos.split(',').map((p: string) => p.trim()).filter(Boolean)
-    }
-  }
-
-  // Gérer la date de création
-  let dateFormatted = new Date().toISOString().split('T')[0]
+const transformApiReview = (apiReview: any): AvisData | null => {
   try {
-    if (apiReview.createdAt) {
-      dateFormatted = new Date(apiReview.createdAt).toISOString().split('T')[0]
+    // Vérifications de base
+    if (!apiReview) {
+      console.warn('⚠️ Avis invalide:', apiReview)
+      return null
     }
-  } catch (e) {
-    console.warn('Date invalide pour l\'avis:', apiReview.id)
-  }
 
-  // Gérer la note
-  console.log('🔍 Type de overallRating:', typeof apiReview.overallRating, 'Valeur:', apiReview.overallRating)
-  const note = Number(apiReview.overallRating) || 5
-  console.log('✅ Note convertie:', note, 'Type:', typeof note)
+    // Extraire les photos (string CSV vers array)
+    let photos: string[] = []
+    if (apiReview.photos) {
+      if (Array.isArray(apiReview.photos)) {
+        photos = apiReview.photos.filter((p: string) => p && typeof p === 'string')
+      } else if (typeof apiReview.photos === 'string') {
+        photos = apiReview.photos
+          .split(',')
+          .map((p: string) => p.trim())
+          .filter(Boolean)
+      }
+    }
 
-  return {
-    id: apiReview.id || Date.now(),
-    auteur: `${apiReview.guest?.firstName || 'Anonyme'} ${apiReview.guest?.lastName || ''}`.trim(),
-    avatar: apiReview.guest?.avatar || '/images/avatars/default.svg',
-    note: note,
-    date: dateFormatted,
-    sejour: apiReview.stayDate || 'Date inconnue',
-    chambre: apiReview.roomName || 'Chambre',
-    titre: apiReview.title || 'Sans titre',
-    commentaire: apiReview.comment || '',
-    photos: photos,
-    utile: apiReview.helpfulCount || 0,
-    reponseHotel: apiReview.hotelResponse || null
+    // Gérer la date de création de façon robuste
+    let dateFormatted = new Date().toISOString().split('T')[0]
+    try {
+      if (apiReview.createdAt) {
+        const date = new Date(apiReview.createdAt)
+        if (!isNaN(date.getTime())) {
+          dateFormatted = date.toISOString().split('T')[0]
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Date invalide pour l\'avis:', apiReview.id, e)
+    }
+
+    // Gérer la note de façon robuste (doit être entre 1 et 5)
+    let note = 5 // Valeur par défaut
+    if (apiReview.overallRating !== undefined && apiReview.overallRating !== null) {
+      // Si overallRating est un objet avec plusieurs notes (structure backend complexe)
+      if (typeof apiReview.overallRating === 'object') {
+        console.log('ℹ️ overallRating est un objet pour l\'avis:', apiReview.id, apiReview.overallRating)
+        // Essayer d'extraire la note globale de l'objet
+        // Cela peut être utile si le backend renvoie un objet de ratings détaillés
+        if (typeof apiReview.overallRating.overallRating === 'number') {
+          note = apiReview.overallRating.overallRating
+        } else {
+          console.warn('⚠️ Impossible d\'extraire la note de l\'objet overallRating')
+          // Utiliser la note par défaut de 5
+        }
+      } else {
+        // overallRating est un nombre simple
+        const parsedNote = Number(apiReview.overallRating)
+        if (!isNaN(parsedNote) && parsedNote >= 1 && parsedNote <= 5) {
+          note = parsedNote
+        } else {
+          console.warn('⚠️ Note invalide pour l\'avis:', apiReview.id, 'Note reçue:', apiReview.overallRating)
+        }
+      }
+    }
+
+    // Gérer l'auteur de façon robuste
+    let auteur = 'Anonyme'
+    if (apiReview.guest) {
+      const firstName = apiReview.guest.firstName || ''
+      const lastName = apiReview.guest.lastName || ''
+      const fullName = `${firstName} ${lastName}`.trim()
+      if (fullName) {
+        auteur = fullName
+      }
+    }
+
+    // Gérer l'avatar
+    const avatar = apiReview.guest?.avatar || '/images/avatars/default.svg'
+
+    // Gérer le séjour
+    let sejour = 'Date inconnue'
+    if (apiReview.stayDate && typeof apiReview.stayDate === 'string') {
+      sejour = apiReview.stayDate
+    }
+
+    // Gérer la chambre
+    const chambre = apiReview.roomName && typeof apiReview.roomName === 'string'
+      ? apiReview.roomName
+      : 'Chambre'
+
+    // Gérer le titre
+    const titre = apiReview.title && typeof apiReview.title === 'string'
+      ? apiReview.title
+      : 'Sans titre'
+
+    // Gérer le commentaire
+    const commentaire = apiReview.comment && typeof apiReview.comment === 'string'
+      ? apiReview.comment
+      : ''
+
+    // Gérer le nombre de likes
+    const utile = typeof apiReview.helpfulCount === 'number' && apiReview.helpfulCount >= 0
+      ? apiReview.helpfulCount
+      : 0
+
+    // Gérer la réponse de l'hôtel
+    const reponseHotel = apiReview.hotelResponse && typeof apiReview.hotelResponse === 'string'
+      ? apiReview.hotelResponse
+      : null
+
+    return {
+      id: apiReview.id || Date.now(),
+      auteur,
+      avatar,
+      note,
+      date: dateFormatted,
+      sejour,
+      chambre,
+      titre,
+      commentaire,
+      photos,
+      utile,
+      reponseHotel
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la transformation de l\'avis:', error, 'Avis:', apiReview)
+    return null
   }
 }
 
@@ -168,30 +250,64 @@ export default function AvisPage() {
           getHotelReviewsStats(hotelId)
         ])
 
-        console.log('✅ Avis reçus:', reviewsResponse.data)
-        console.log('📊 Stats reçues:', statsResponse.data)
+        console.log('✅ Réponse complète de l\'API avis:', reviewsResponse)
+        console.log('✅ Avis reçus (data):', reviewsResponse.data)
+        console.log('📊 Réponse complète des stats:', statsResponse)
+        console.log('📊 Stats reçues (data):', statsResponse.data)
 
         // Transformer les avis (gérer les différentes structures de réponse)
         const reviewsData = reviewsResponse.data?.data || reviewsResponse.data || []
         console.log('📋 Type de reviewsData:', typeof reviewsData, 'Is array:', Array.isArray(reviewsData))
-        console.log('📋 reviewsData:', reviewsData)
+        console.log('📋 Contenu de reviewsData:', JSON.stringify(reviewsData, null, 2))
 
         const transformedReviews = Array.isArray(reviewsData)
-          ? reviewsData.map((review, index) => {
-              console.log(`🔄 Transformation avis ${index}:`, review)
-              const transformed = transformApiReview(review)
-              console.log(`✅ Avis transformé ${index}:`, transformed)
-              return transformed
-            })
+          ? reviewsData
+              .map((review, index) => {
+                console.log(`🔄 Transformation avis ${index}:`, review)
+                const transformed = transformApiReview(review)
+                console.log(`✅ Avis transformé ${index}:`, transformed)
+                return transformed
+              })
+              .filter((review): review is AvisData => review !== null) // Filtrer les avis invalides
           : []
         console.log('📝 Total avis transformés:', transformedReviews.length)
         setAvis(transformedReviews)
 
         // Mettre à jour les stats (gérer les différentes structures de réponse)
         const stats = statsResponse.data?.data || statsResponse.data || {}
-        setNotesMoyenne(stats.averageRating || 0)
-        setTotalAvis(stats.totalReviews || 0)
-        setDistribution(stats.ratingDistribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 })
+        console.log('📊 Stats extraites:', JSON.stringify(stats, null, 2))
+
+        // Gérer averageRating qui peut être un nombre OU un objet
+        let avgRating = 0
+        if (typeof stats.averageRating === 'number' && !isNaN(stats.averageRating)) {
+          // Si c'est déjà un nombre
+          avgRating = stats.averageRating
+        } else if (typeof stats.averageRating === 'object' && stats.averageRating !== null) {
+          // Si c'est un objet avec overallRating
+          const overallRating = stats.averageRating.overallRating
+          if (typeof overallRating === 'number' && !isNaN(overallRating)) {
+            avgRating = overallRating
+          }
+        }
+        setNotesMoyenne(avgRating)
+
+        // S'assurer que totalReviews est bien un nombre (peut être "total" ou "totalReviews")
+        const totalFromApi = stats.totalReviews || stats.total || stats.published || 0
+        const totalRev = typeof totalFromApi === 'number' && !isNaN(totalFromApi)
+          ? totalFromApi
+          : 0
+        setTotalAvis(totalRev)
+
+        // S'assurer que ratingDistribution contient bien des nombres
+        const distrib = stats.ratingDistribution || {}
+        const safeDistribution = {
+          5: typeof distrib[5] === 'number' && !isNaN(distrib[5]) ? distrib[5] : 0,
+          4: typeof distrib[4] === 'number' && !isNaN(distrib[4]) ? distrib[4] : 0,
+          3: typeof distrib[3] === 'number' && !isNaN(distrib[3]) ? distrib[3] : 0,
+          2: typeof distrib[2] === 'number' && !isNaN(distrib[2]) ? distrib[2] : 0,
+          1: typeof distrib[1] === 'number' && !isNaN(distrib[1]) ? distrib[1] : 0,
+        }
+        setDistribution(safeDistribution)
 
         setError(null)
       } catch (err: any) {
@@ -225,15 +341,46 @@ export default function AvisPage() {
       // Transformer les avis
       const reviewsData = reviewsResponse.data?.data || reviewsResponse.data || []
       const transformedReviews = Array.isArray(reviewsData)
-        ? reviewsData.map(transformApiReview)
+        ? reviewsData
+            .map(transformApiReview)
+            .filter((review): review is AvisData => review !== null) // Filtrer les avis invalides
         : []
       setAvis(transformedReviews)
 
       // Mettre à jour les stats
       const stats = statsResponse.data?.data || statsResponse.data || {}
-      setNotesMoyenne(stats.averageRating || 0)
-      setTotalAvis(stats.totalReviews || 0)
-      setDistribution(stats.ratingDistribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 })
+
+      // Gérer averageRating qui peut être un nombre OU un objet
+      let avgRating = 0
+      if (typeof stats.averageRating === 'number' && !isNaN(stats.averageRating)) {
+        // Si c'est déjà un nombre
+        avgRating = stats.averageRating
+      } else if (typeof stats.averageRating === 'object' && stats.averageRating !== null) {
+        // Si c'est un objet avec overallRating
+        const overallRating = stats.averageRating.overallRating
+        if (typeof overallRating === 'number' && !isNaN(overallRating)) {
+          avgRating = overallRating
+        }
+      }
+      setNotesMoyenne(avgRating)
+
+      // S'assurer que totalReviews est bien un nombre (peut être "total" ou "totalReviews")
+      const totalFromApi = stats.totalReviews || stats.total || stats.published || 0
+      const totalRev = typeof totalFromApi === 'number' && !isNaN(totalFromApi)
+        ? totalFromApi
+        : 0
+      setTotalAvis(totalRev)
+
+      // S'assurer que ratingDistribution contient bien des nombres
+      const distrib = stats.ratingDistribution || {}
+      const safeDistribution = {
+        5: typeof distrib[5] === 'number' && !isNaN(distrib[5]) ? distrib[5] : 0,
+        4: typeof distrib[4] === 'number' && !isNaN(distrib[4]) ? distrib[4] : 0,
+        3: typeof distrib[3] === 'number' && !isNaN(distrib[3]) ? distrib[3] : 0,
+        2: typeof distrib[2] === 'number' && !isNaN(distrib[2]) ? distrib[2] : 0,
+        1: typeof distrib[1] === 'number' && !isNaN(distrib[1]) ? distrib[1] : 0,
+      }
+      setDistribution(safeDistribution)
 
       console.log('✅ Avis rechargés avec succès')
     } catch (err) {
@@ -334,7 +481,7 @@ export default function AvisPage() {
             <div className="lg:col-span-4 text-center lg:text-left">
               <div className="flex items-center justify-center lg:justify-start gap-6 mb-4">
                 <div className="font-display text-7xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
-                  {notesMoyenne}
+                  {typeof notesMoyenne === 'number' ? notesMoyenne.toFixed(1) : '0.0'}
                 </div>
                 <div>
                   <div className="flex items-center gap-1 mb-2">

@@ -235,3 +235,19 @@ export function transformApiCertificatToCertificat(apiCertificat: ApiCertificatC
     dateExpiration: apiCertificat.dateExpiration,
   }
 }
+
+/**
+ * Transformer pour les montants de certificats depuis /api/v1/spa/certificats/amounts
+ * Format API: { montant: number, label: string, isPopular: boolean }
+ */
+export function transformCertificatAmountToCertificat(apiAmount: { montant: number, label: string, isPopular: boolean }): CertificatCadeau {
+  return {
+    id: `amount-${apiAmount.montant}`,
+    code: '',
+    montant: apiAmount.montant,
+    populaire: apiAmount.isPopular,
+    disponible: true, // Les montants sont toujours disponibles
+    isUtilise: false,
+    dateExpiration: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 an dans le futur
+  }
+}

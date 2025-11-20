@@ -41,9 +41,52 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
     setErrorMessage('')
 
     try {
+      // Validation des données avant l'envoi
+      if (!formData.auteur.trim()) {
+        throw new Error('Le nom est requis')
+      }
+      if (!formData.email.trim()) {
+        throw new Error('L\'email est requis')
+      }
+      if (!formData.chambre) {
+        throw new Error('Veuillez sélectionner une chambre')
+      }
+      if (!formData.titre.trim()) {
+        throw new Error('Le titre est requis')
+      }
+      if (!formData.commentaire.trim()) {
+        throw new Error('Le commentaire est requis')
+      }
+      if (formData.note < 1 || formData.note > 5) {
+        throw new Error('La note doit être entre 1 et 5')
+      }
+
+      // Validation de l'email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) {
+        throw new Error('L\'email n\'est pas valide')
+      }
+
+      console.log('✅ Validation réussie, envoi de l\'avis...')
+
       // S'assurer qu'on a l'authentification guest
       const { ensureGuestAuth } = await import('@/services/auth/guestAuth')
-      await ensureGuestAuth()
+      console.log('🔐 Tentative d\'authentification guest...')
+      const token = await ensureGuestAuth()
+
+      console.log('🔐 Token reçu:', token ? 'Token présent (' + token.substring(0, 20) + '...)' : 'Aucun token')
+
+      // Vérifier que le token est bien dans localStorage
+      if (typeof window !== 'undefined') {
+        const storedToken = localStorage.getItem('userToken')
+        console.log('🔐 Token dans localStorage:', storedToken ? 'Présent (' + storedToken.substring(0, 20) + '...)' : 'Absent')
+      }
+
+      if (!token) {
+        throw new Error('Impossible de s\'authentifier. Veuillez réessayer.')
+      }
+
+      console.log('✅ Authentification guest réussie')
 
       // Préparer les données pour l'API
       const reviewData = {
@@ -51,8 +94,8 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
         roomName: formData.chambre,
         stayDate: new Date().toLocaleDateString('fr-CA', { month: 'long', year: 'numeric' }),
         overallRating: formData.note,
-        title: formData.titre,
-        comment: formData.commentaire,
+        title: formData.titre.trim(),
+        comment: formData.commentaire.trim(),
         photos: photos.length > 0 ? photos : undefined,
       }
 
@@ -102,11 +145,23 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
     } catch (error: any) {
       console.error('❌ Erreur lors de la création de l\'avis:', error)
       setSubmitStatus('error')
-      setErrorMessage(
-        error.response?.data?.message ||
-        error.message ||
-        'Une erreur est survenue lors de l\'envoi de votre avis. Veuillez réessayer.'
-      )
+
+      // Messages d'erreur plus détaillés
+      let errorMsg = 'Une erreur est survenue lors de l\'envoi de votre avis.'
+
+      if (error.message) {
+        errorMsg = error.message
+      } else if (error.response?.data?.message) {
+        errorMsg = error.response.data.message
+      } else if (error.response?.status === 401) {
+        errorMsg = 'Erreur d\'authentification. Veuillez réessayer.'
+      } else if (error.response?.status === 400) {
+        errorMsg = 'Données invalides. Veuillez vérifier vos informations.'
+      } else if (error.response?.status === 500) {
+        errorMsg = 'Erreur du serveur. Veuillez réessayer plus tard.'
+      }
+
+      setErrorMessage(errorMsg)
     } finally {
       setIsSubmitting(false)
     }

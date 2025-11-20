@@ -1,44 +1,125 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { Star, ArrowRight } from 'lucide-react'
+import { Star, ArrowRight, Loader2 } from 'lucide-react'
 import Image from 'next/image'
+import { getHotelReviews, getHotelReviewsStats } from '@/services/api/routeApi'
+import { hotelId } from '@/services/api/Api'
 
-const testimonials = [
-  {
-    id: 1,
-    name: 'Marie Tremblay',
-    location: 'Québec',
-    avatar: '/images/avatars/avatar-1.jpg',
-    rating: 5,
-    date: 'Il y a 2 semaines',
-    comment: 'Un séjour absolument magnifique ! Les chambres sont spacieuses et impeccables. Le personnel est aux petits soins. Le spa est un vrai havre de paix. Je recommande vivement !',
-    service: 'Suite Royale + Massage'
-  },
-  {
-    id: 2,
-    name: 'Jean-François Bouchard',
-    location: 'Montréal',
-    avatar: '/images/avatars/avatar-2.jpg',
-    rating: 5,
-    date: 'Il y a 1 mois',
-    comment: 'Excellente expérience du début à la fin. La vue sur le fleuve depuis notre chambre était à couper le souffle. Les services spa sont de qualité professionnelle.',
-    service: 'Chambre Deluxe + Hammam'
-  },
-  {
-    id: 3,
-    name: 'Sophie Gagnon',
-    location: 'Rimouski',
-    avatar: '/images/avatars/avatar-3.jpg',
-    rating: 5,
-    date: 'Il y a 3 semaines',
-    comment: 'Week-end parfait en famille ! Les enfants ont adoré la piscine et nous avons profité du spa. Tout était parfait, de l\'accueil au petit-déjeuner.',
-    service: 'Suite Familiale'
+// Type pour les avis
+interface Avis {
+  id: string | number
+  auteur: string
+  avatar: string
+  note: number
+  date: string
+  commentaire: string
+  chambre: string
+}
+
+// Fonction pour formater la date relative
+function formatRelativeDate(dateString: string): string {
+  try {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInMs = now.getTime() - date.getTime()
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
+
+    if (diffInDays === 0) return 'Aujourd\'hui'
+    if (diffInDays === 1) return 'Hier'
+    if (diffInDays < 7) return `Il y a ${diffInDays} jours`
+    if (diffInDays < 30) return `Il y a ${Math.floor(diffInDays / 7)} semaine${Math.floor(diffInDays / 7) > 1 ? 's' : ''}`
+    if (diffInDays < 365) return `Il y a ${Math.floor(diffInDays / 30)} mois`
+    return `Il y a ${Math.floor(diffInDays / 365)} an${Math.floor(diffInDays / 365) > 1 ? 's' : ''}`
+  } catch (e) {
+    return dateString
   }
-]
+}
 
 export function TestimonialsSection() {
+  const [avis, setAvis] = useState<Avis[]>([])
+  const [notesMoyenne, setNotesMoyenne] = useState(0)
+  const [totalAvis, setTotalAvis] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setLoading(true)
+        console.log('🏠 Chargement des avis pour la page d\'accueil')
+
+        // Charger les avis et les stats en parallèle
+        const [reviewsResponse, statsResponse] = await Promise.all([
+          getHotelReviews(hotelId),
+          getHotelReviewsStats(hotelId)
+        ])
+
+        // Transformer les avis
+        const reviewsData = reviewsResponse.data?.data || reviewsResponse.data || []
+        const transformedReviews = Array.isArray(reviewsData)
+          ? reviewsData
+              .slice(0, 3) // Limiter à 3 avis
+              .map((review: any) => ({
+                id: review.id || Date.now(),
+                auteur: `${review.guest?.firstName || 'Anonyme'} ${review.guest?.lastName || ''}`.trim(),
+                avatar: review.guest?.avatar || '/images/avatars/default.svg',
+                note: typeof review.overallRating === 'number' ? review.overallRating : 5,
+                date: review.createdAt || new Date().toISOString(),
+                commentaire: review.comment || '',
+                chambre: review.roomName || 'Chambre'
+              }))
+          : []
+        setAvis(transformedReviews)
+
+        // Mettre à jour les stats
+        const stats = statsResponse.data?.data || statsResponse.data || {}
+
+        // Gérer averageRating qui peut être un nombre OU un objet
+        let avgRating = 0
+        if (typeof stats.averageRating === 'number') {
+          avgRating = stats.averageRating
+        } else if (typeof stats.averageRating === 'object' && stats.averageRating !== null) {
+          avgRating = stats.averageRating.overallRating || 0
+        }
+        setNotesMoyenne(avgRating)
+
+        // Gérer totalReviews
+        const totalFromApi = stats.totalReviews || stats.total || stats.published || 0
+        setTotalAvis(typeof totalFromApi === 'number' ? totalFromApi : 0)
+
+        console.log('✅ Avis chargés pour la page d\'accueil:', transformedReviews.length)
+      } catch (error) {
+        console.error('❌ Erreur chargement avis page d\'accueil:', error)
+        // En cas d'erreur, ne rien afficher (la section sera vide)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchReviews()
+  }, [])
+
+  // Si en chargement
+  if (loading) {
+    return (
+      <section className="py-16 lg:py-24 bg-white">
+        <div className="container-custom">
+          <div className="text-center py-12">
+            <Loader2 className="h-12 w-12 animate-spin text-primary-600 mx-auto mb-4" />
+            <p className="text-neutral-600">Chargement des avis...</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  // Si pas d'avis, ne pas afficher la section
+  if (!loading && avis.length === 0) {
+    return null
+  }
+
   return (
     <section className="py-16 lg:py-24 bg-white relative overflow-hidden">
       <div className="absolute inset-0 opacity-5">
@@ -78,16 +159,16 @@ export function TestimonialsSection() {
           </div>
           <div className="text-center">
             <div className="font-display text-4xl font-bold text-neutral-900">
-              4.9/5
+              {typeof notesMoyenne === 'number' ? notesMoyenne.toFixed(1) : '5.0'}/5
             </div>
             <p className="text-neutral-600">
-              Basé sur 847 avis vérifiés
+              Basé sur {totalAvis} avis vérifiés
             </p>
           </div>
         </motion.div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {testimonials.map((testimonial, index) => (
+          {avis.map((testimonial, index) => (
             <motion.div
               key={testimonial.id}
               initial={{ opacity: 0, y: 20 }}
@@ -100,43 +181,43 @@ export function TestimonialsSection() {
                 <div className="relative h-12 w-12 rounded-full overflow-hidden bg-neutral-200">
                   <Image
                     src={testimonial.avatar}
-                    alt={testimonial.name}
+                    alt={testimonial.auteur}
                     fill
                     className="object-cover"
                   />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-neutral-900">
-                    {testimonial.name}
+                    {testimonial.auteur}
                   </h3>
                   <p className="text-xs text-neutral-500">
-                    {testimonial.location}
+                    {formatRelativeDate(testimonial.date)}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-1 mb-3">
-                {[...Array(testimonial.rating)].map((_, i) => (
+                {[...Array(Math.round(testimonial.note))].map((_, i) => (
                   <Star
                     key={i}
                     className="h-4 w-4 text-accent-gold fill-accent-gold"
                   />
                 ))}
                 <span className="text-xs text-neutral-500 ml-2">
-                  {testimonial.date}
+                  {testimonial.note.toFixed(1)}/5
                 </span>
               </div>
 
-              <p className="text-neutral-700 text-sm leading-relaxed mb-4">
-                {testimonial.comment}
+              <p className="text-neutral-700 text-sm leading-relaxed mb-4 line-clamp-3">
+                {testimonial.commentaire}
               </p>
 
               <div className="pt-4 border-t border-neutral-100">
                 <span className="text-xs text-neutral-500">
-                  Service réservé :
+                  Chambre :
                 </span>
                 <p className="text-sm font-medium text-primary-600 mt-1">
-                  {testimonial.service}
+                  {testimonial.chambre}
                 </p>
               </div>
             </motion.div>

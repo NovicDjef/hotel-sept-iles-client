@@ -98,13 +98,17 @@ apiService.interceptors.request.use(
       }
     } else {
       // Routes privées : token obligatoire
-      config.withCredentials = true
+      // Ne pas utiliser withCredentials pour éviter les problèmes CORS avec localhost
+      config.withCredentials = false
 
       try {
         if (typeof window !== 'undefined') {
           const token = localStorage.getItem('userToken')
           if (token) {
             config.headers.Authorization = `Bearer ${token}`
+            console.log('🔑 Token envoyé pour route privée:', token.substring(0, 30) + '...')
+          } else {
+            console.warn('⚠️ Aucun token trouvé pour route privée')
           }
         }
       } catch (error) {

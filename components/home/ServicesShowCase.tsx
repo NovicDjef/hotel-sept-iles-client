@@ -136,7 +136,7 @@ export function ServicesShowcase() {
                     fill
                     //className="object-cover opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-700"
                   />
-                  <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-40 group-hover:opacity-50 transition-opacity duration-500`} />
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary-600/50 to-primary-900/50 opacity-40 group-hover:opacity-50 transition-opacity duration-500" />
                 </div>
 
                 {/* Contenu */}
@@ -175,7 +175,7 @@ export function ServicesShowcase() {
                   {/* Durée */}
                   <div className="flex items-center gap-2 text-white/70 text-xs mb-4">
                     <div className="h-1 w-1 rounded-full bg-white/50" />
-                    <span>{service.duration}</span>
+                    <span>{service.duree && service.duree.length > 0 ? `${service.duree[0]} min` : ''}</span>
                   </div>
 
                   {/* CTA */}
@@ -230,15 +230,15 @@ export function ServicesShowcase() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-display font-bold text-primary-600">
-                  {forfaitsList[0].prix}$
+                  {forfaitsList[0].prixIndividuel}$
                 </span>
-                {forfaitsList[0].prixRegulier && (
+                {forfaitsList[0].economieIndividuel > 0 && (
                   <>
                     <span className="text-neutral-500 line-through text-lg">
-                      {forfaitsList[0].prixRegulier}$
+                      {forfaitsList[0].prixIndividuel + forfaitsList[0].economieIndividuel}$
                     </span>
                     <span className="badge-success">
-                      -{Math.round(((forfaitsList[0].prixRegulier - forfaitsList[0].prix) / forfaitsList[0].prixRegulier) * 100)}%
+                      -{Math.round((forfaitsList[0].economieIndividuel / (forfaitsList[0].prixIndividuel + forfaitsList[0].economieIndividuel)) * 100)}%
                     </span>
                   </>
                 )}
@@ -246,19 +246,16 @@ export function ServicesShowcase() {
             </div>
 
             {/* Affichage des services inclus */}
-            {forfaitsList[0].servicesInclus && forfaitsList[0].servicesInclus.length > 0 && (
+            {forfaitsList[0].services && forfaitsList[0].services.length > 0 && (
               <div className="mt-6 max-w-xl mx-auto">
                 <p className="text-sm font-medium text-neutral-700 mb-3">Services inclus:</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
-                  {forfaitsList[0].servicesInclus.map((serviceId: string, idx: number) => {
-                    const includedService = services.find(s => s.id === serviceId)
-                    return includedService ? (
+                  {forfaitsList[0].services.map((service, idx: number) => (
                       <div key={idx} className="flex items-center gap-2 text-sm text-neutral-600">
                         <Check className="h-4 w-4 text-primary-600" />
-                        <span>{includedService.name}</span>
+                        <span>{service.nom}</span>
                       </div>
-                    ) : null
-                  })}
+                  ))}
                 </div>
               </div>
             )}

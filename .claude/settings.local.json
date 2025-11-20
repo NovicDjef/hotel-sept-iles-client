@@ -11,7 +11,9 @@
       "Bash(npx tsc:*)",
       "Bash(awk:*)",
       "Bash(tee:*)",
-      "Bash(lsof:*)"
+      "Bash(lsof:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWk3cG9hbWgwMDFkYnUwNjloZHN2M2JsIiwiZW1haWwiOiJ0ZXN0LmN1cmwyQGV4YW1wbGUuY29tIiwicm9sZSI6IkdVRVNUIiwiaG90ZWxJZCI6ImNtaDNpeWdldzAwMDA5Y3J6c2xzNnJsenkiLCJ0eXBlIjoiZ3Vlc3QiLCJpYXQiOjE3NjM2NjAwNzksImV4cCI6MTc2NDI2NDg3OX0._XvJqprX4dHsJWEtEIqU12W1E7g24D0MXeo6nRreoE8\")",
+      "Bash(__NEW_LINE__ curl -s -X POST http://localhost:5001/api/v1/reviews )"
     ],
     "deny": [],
     "ask": []

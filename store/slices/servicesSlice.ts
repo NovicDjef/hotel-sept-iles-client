@@ -6,7 +6,8 @@ import {
   SpaCategory,
   transformApiServiceToService,
   transformApiForfaitToForfait,
-  transformApiCertificatToCertificat
+  transformApiCertificatToCertificat,
+  transformCertificatAmountToCertificat
 } from '@/types/service'
 
 // État initial
@@ -103,14 +104,16 @@ export const fetchCertificats = createAsyncThunk(
   'services/fetchCertificats',
   async (_, { rejectWithValue }) => {
     try {
-      const { getAllCertificats } = await import('@/services/api/routeApi')
-      const response = await getAllCertificats()
-      console.log('Réponse API certificats:', response.data)
+      // Utiliser le nouvel endpoint /amounts pour récupérer les montants disponibles
+      const { getCertificatsAmounts } = await import('@/services/api/routeApi')
+      const response = await getCertificatsAmounts()
+      console.log('Réponse API certificats amounts:', response.data)
 
-      const apiCertificats = response.data.data || response.data
-      console.log('Certificats API récupérés:', apiCertificats)
+      const apiCertificatsAmounts = response.data.data || response.data
+      console.log('Certificats amounts API récupérés:', apiCertificatsAmounts)
 
-      const transformedCertificats = apiCertificats.map(transformApiCertificatToCertificat)
+      // Utiliser le nouveau transformer pour les amounts
+      const transformedCertificats = apiCertificatsAmounts.map(transformCertificatAmountToCertificat)
       console.log('Certificats transformés:', transformedCertificats)
 
       return transformedCertificats

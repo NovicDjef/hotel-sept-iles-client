@@ -29,21 +29,42 @@ interface AvisCardProps {
 export function AvisCard({ avis, index }: AvisCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [hasLiked, setHasLiked] = useState(false)
-  const [likesCount, setLikesCount] = useState(avis.utile)
+  const [likesCount, setLikesCount] = useState(avis.utile || 0)
   const [isLiking, setIsLiking] = useState(false)
+  const [likeError, setLikeError] = useState<string | null>(null)
 
-  // S'assurer que la note est un nombre
-  const noteValue = typeof avis.note === 'number' ? avis.note : Number(avis.note) || 5
+  // S'assurer que la note est un nombre valide entre 1 et 5
+  let noteValue = 5 // Valeur par défaut
+  if (typeof avis.note === 'number' && !isNaN(avis.note) && avis.note >= 1 && avis.note <= 5) {
+    noteValue = avis.note
+  } else if (avis.note) {
+    const parsedNote = Number(avis.note)
+    if (!isNaN(parsedNote) && parsedNote >= 1 && parsedNote <= 5) {
+      noteValue = parsedNote
+    } else {
+      console.warn('⚠️ Note invalide pour l\'avis:', avis.id, 'Note:', avis.note)
+    }
+  }
 
   const handleLike = async () => {
     if (hasLiked || isLiking) return
 
     try {
       setIsLiking(true)
+      setLikeError(null)
+
+      // Vérifier que l'ID de l'avis est valide
+      if (!avis.id) {
+        throw new Error('ID de l\'avis manquant')
+      }
 
       // S'assurer qu'on a l'authentification guest
       const { ensureGuestAuth } = await import('@/services/auth/guestAuth')
-      await ensureGuestAuth()
+      const token = await ensureGuestAuth()
+
+      if (!token) {
+        throw new Error('Impossible de s\'authentifier. Veuillez réessayer.')
+      }
 
       // Marquer comme utile via l'API
       await markReviewAsHelpful(String(avis.id))
@@ -55,6 +76,7 @@ export function AvisCard({ avis, index }: AvisCardProps) {
       console.log('✅ Avis marqué comme utile')
     } catch (error: any) {
       console.error('❌ Erreur lors du marquage comme utile:', error)
+      setLikeError(error.response?.data?.message || error.message || 'Erreur lors du marquage')
       // Si erreur, permettre de réessayer
       // Ne pas changer hasLiked ni likesCount
     } finally {
@@ -62,7 +84,7 @@ export function AvisCard({ avis, index }: AvisCardProps) {
     }
   }
 
-  const isLongText = avis.commentaire.length > 300
+  const isLongText = avis.commentaire && avis.commentaire.length > 300
 
   return (
     <motion.div
@@ -105,11 +127,21 @@ export function AvisCard({ avis, index }: AvisCardProps) {
                 </div>
               </div>
               <span className="text-sm text-neutral-400 whitespace-nowrap">
-                {new Date(avis.date).toLocaleDateString('fr-CA', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric'
-                })}
+                {(() => {
+                  try {
+                    const date = new Date(avis.date)
+                    if (isNaN(date.getTime())) {
+                      return avis.date || 'Date inconnue'
+                    }
+                    return date.toLocaleDateString('fr-CA', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })
+                  } catch (e) {
+                    return avis.date || 'Date inconnue'
+                  }
+                })()}
               </span>
             </div>
 
@@ -155,23 +187,25 @@ export function AvisCard({ avis, index }: AvisCardProps) {
         </div>
 
         {/* Photos */}
-        {avis.photos.length > 0 && (
+        {avis.photos && avis.photos.length > 0 && (
           <div className="mb-6">
             <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
               {avis.photos.map((photo, i) => (
-                <motion.div
-                  key={i}
-                  whileHover={{ scale: 1.05 }}
-                  className="relative w-40 h-40 rounded-2xl overflow-hidden flex-shrink-0 cursor-pointer shadow-md hover:shadow-xl transition-all"
-                >
-                  <Image
-                    src={photo}
-                    alt={`Photo ${i + 1}`}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
-                </motion.div>
+                photo && (
+                  <motion.div
+                    key={i}
+                    whileHover={{ scale: 1.05 }}
+                    className="relative w-40 h-40 rounded-2xl overflow-hidden flex-shrink-0 cursor-pointer shadow-md hover:shadow-xl transition-all"
+                  >
+                    <Image
+                      src={photo}
+                      alt={`Photo ${i + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
+                  </motion.div>
+                )
               ))}
             </div>
           </div>

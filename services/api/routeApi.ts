@@ -296,6 +296,13 @@ export const getAllCertificats = () => {
 }
 
 /**
+ * Récupère les montants disponibles pour les certificats cadeaux
+ */
+export const getCertificatsAmounts = () => {
+  return apiService.get(`/api/v1/spa/certificats/amounts?hotelId=${hotelId}`)
+}
+
+/**
  * Récupère un certificat cadeau par son ID
  */
 export const getCertificatById = (id: string) => {
