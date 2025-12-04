@@ -119,7 +119,7 @@ export default function HomePage() {
                 ))}
               </div>
 
-              <Link href="/contact" className="btn-secondary">
+              <Link href="/contact" prefetch={true} className="btn-secondary">
                 <MapPin className="h-4 w-4" />
                 Voir l'itinéraire
               </Link>

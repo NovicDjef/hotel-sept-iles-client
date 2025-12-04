@@ -213,7 +213,7 @@ SETTINGS_INTEGRATION_GUIDE.md
 
 ### 2. MetadataBase Warning
 ```
-⚠ metadataBase not set, using http://localhost:3000
+⚠ metadataBase not set, using http://localhost:3001
 ```
 **Impact :** Affecte seulement les images Open Graph
 **Action :** Ajouter metadataBase dans metadata de layout.tsx si déploiement

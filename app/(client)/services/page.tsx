@@ -101,8 +101,14 @@ export default function ServicesPage() {
                 <Calendar className="h-5 w-5" />
                 Réserver avec une chambre
               </Link>
-              <a href="#services" className="btn-secondary bg-white text-primary-600 hover:bg-neutral-50">
-                Voir les services
+              <a
+                href="https://www.sparenaissance.ca/services/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary bg-white text-primary-600 hover:bg-neutral-50"
+              >
+                <Sparkles className="h-4 w-4" />
+                Réserver spa seul
                 <ArrowRight className="h-4 w-4" />
               </a>
             </div>
@@ -436,10 +442,15 @@ export default function ServicesPage() {
                     <p className="text-xs text-neutral-600">Valeur</p>
                   </div>
 
-                  <button className="btn-primary-sm w-full justify-center text-xs group-hover:shadow-lg transition-all">
+                  <a
+                    href="https://www.sparenaissance.ca/boutique/certificats-cadeaux/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary-sm w-full justify-center text-xs group-hover:shadow-lg transition-all"
+                  >
                     <Gift className="h-3 w-3" />
                     Acheter
-                  </button>
+                  </a>
                 </div>
               </motion.div>
             ))}
@@ -483,13 +494,25 @@ export default function ServicesPage() {
                 Prêt à vous détendre ?
               </h2>
               <p className="text-white/90 mb-8">
-                Réservez une chambre et ajoutez nos services spa pour une expérience complète
+                Réservez une chambre avec nos services spa pour une expérience complète, ou réservez uniquement vos soins
               </p>
-              <Link href="/chambres" className="btn-gold inline-flex">
-                <Calendar className="h-5 w-5" />
-                Réserver maintenant
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/chambres" className="btn-gold inline-flex">
+                  <Calendar className="h-5 w-5" />
+                  Réserver avec chambre
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <a
+                  href="https://www.sparenaissance.ca/services/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-white text-primary-600 px-6 py-3 font-semibold shadow-lg transition-all hover:bg-neutral-50 hover:shadow-xl"
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Réserver spa seul
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+              </div>
             </motion.div>
           </div>
         </div>
@@ -584,14 +607,26 @@ function ServiceDetailModal({ service, onClose }: { service: any, onClose: () =>
           </div>
 
           {/* CTA */}
-          <Link
-            href="/chambres"
-            className="btn-primary w-full justify-center"
-            onClick={onClose}
-          >
-            <Calendar className="h-5 w-5" />
-            Réserver avec une chambre
-          </Link>
+          <div className="space-y-3">
+            <Link
+              href="/chambres"
+              className="btn-primary w-full justify-center"
+              onClick={onClose}
+            >
+              <Calendar className="h-5 w-5" />
+              Réserver avec une chambre
+            </Link>
+            <a
+              href="https://www.sparenaissance.ca/services/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary w-full justify-center"
+            >
+              <Sparkles className="h-5 w-5" />
+              Réserver ce soin uniquement
+              <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
         </div>
       </motion.div>
     </motion.div>

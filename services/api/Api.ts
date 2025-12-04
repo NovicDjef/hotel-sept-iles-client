@@ -1,8 +1,8 @@
 import axios from 'axios'
 
-// const BASE_URL = 'https://api.novic.dev'
-const BASE_URL = `http://localhost:5001`
-const hotelId = `cmh3iygew00009crzsls6rlzy`
+const BASE_URL = 'https://apihotel.novic.dev'
+// const BASE_URL = `http://localhost:5001`
+const hotelId = `cmiajn0ck0000r37cliherz4z`
 
 // Routes publiques qui ne nécessitent pas d'authentification
 // IMPORTANT: Ces routes devraient être publiques mais le backend les bloque actuellement

@@ -151,7 +151,7 @@ Pour tester les paiements en mode test :
 → Vérifiez que `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` est défini dans `.env.local`
 
 ### Erreur : "CORS policy"
-→ Vérifiez que le backend autorise les requêtes depuis `http://localhost:3000`
+→ Vérifiez que le backend autorise les requêtes depuis `http://localhost:3001`
 
 ### Le paiement échoue
 → Vérifiez que vous utilisez une carte de test Stripe

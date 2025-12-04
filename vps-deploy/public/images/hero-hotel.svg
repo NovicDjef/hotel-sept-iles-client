@@ -1,0 +1,64 @@
+<svg width="1920" height="1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="1920" height="1080" fill="url(#skyGrad)"/>
+
+  <!-- Hotel building -->
+  <rect x="600" y="300" width="720" height="600" fill="#1e40af" opacity="0.9"/>
+
+  <!-- Windows -->
+  <g fill="#fbbf24" opacity="0.8">
+    <rect x="650" y="350" width="60" height="80" rx="5"/>
+    <rect x="750" y="350" width="60" height="80" rx="5"/>
+    <rect x="850" y="350" width="60" height="80" rx="5"/>
+    <rect x="950" y="350" width="60" height="80" rx="5"/>
+    <rect x="1050" y="350" width="60" height="80" rx="5"/>
+    <rect x="1150" y="350" width="60" height="80" rx="5"/>
+    <rect x="1250" y="350" width="60" height="80" rx="5"/>
+
+    <rect x="650" y="480" width="60" height="80" rx="5"/>
+    <rect x="750" y="480" width="60" height="80" rx="5"/>
+    <rect x="850" y="480" width="60" height="80" rx="5"/>
+    <rect x="950" y="480" width="60" height="80" rx="5"/>
+    <rect x="1050" y="480" width="60" height="80" rx="5"/>
+    <rect x="1150" y="480" width="60" height="80" rx="5"/>
+    <rect x="1250" y="480" width="60" height="80" rx="5"/>
+
+    <rect x="650" y="610" width="60" height="80" rx="5"/>
+    <rect x="750" y="610" width="60" height="80" rx="5"/>
+    <rect x="850" y="610" width="60" height="80" rx="5"/>
+    <rect x="950" y="610" width="60" height="80" rx="5"/>
+    <rect x="1050" y="610" width="60" height="80" rx="5"/>
+    <rect x="1150" y="610" width="60" height="80" rx="5"/>
+    <rect x="1250" y="610" width="60" height="80" rx="5"/>
+
+    <rect x="650" y="740" width="60" height="80" rx="5"/>
+    <rect x="750" y="740" width="60" height="80" rx="5"/>
+    <rect x="850" y="740" width="60" height="80" rx="5"/>
+    <rect x="950" y="740" width="60" height="80" rx="5"/>
+    <rect x="1050" y="740" width="60" height="80" rx="5"/>
+    <rect x="1150" y="740" width="60" height="80" rx="5"/>
+    <rect x="1250" y="740" width="60" height="80" rx="5"/>
+  </g>
+
+  <!-- Entrance -->
+  <rect x="880" y="820" width="160" height="80" fill="#0c2461"/>
+
+  <!-- Hotel sign -->
+  <rect x="780" y="240" width="360" height="50" fill="#fbbf24" opacity="0.9"/>
+  <text x="960" y="272" font-family="Arial" font-size="32" fill="#1e40af" text-anchor="middle" font-weight="bold">HÔTEL SEPT-ÎLES</text>
+
+  <!-- Stars -->
+  <circle cx="200" cy="150" r="3" fill="white" opacity="0.8"/>
+  <circle cx="350" cy="100" r="2" fill="white" opacity="0.6"/>
+  <circle cx="500" cy="180" r="2" fill="white" opacity="0.7"/>
+  <circle cx="1400" cy="120" r="3" fill="white" opacity="0.8"/>
+  <circle cx="1600" cy="90" r="2" fill="white" opacity="0.6"/>
+  <circle cx="1750" cy="160" r="2" fill="white" opacity="0.7"/>
+</svg>

@@ -13,7 +13,18 @@
       "Bash(tee:*)",
       "Bash(lsof:*)",
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWk3cG9hbWgwMDFkYnUwNjloZHN2M2JsIiwiZW1haWwiOiJ0ZXN0LmN1cmwyQGV4YW1wbGUuY29tIiwicm9sZSI6IkdVRVNUIiwiaG90ZWxJZCI6ImNtaDNpeWdldzAwMDA5Y3J6c2xzNnJsenkiLCJ0eXBlIjoiZ3Vlc3QiLCJpYXQiOjE3NjM2NjAwNzksImV4cCI6MTc2NDI2NDg3OX0._XvJqprX4dHsJWEtEIqU12W1E7g24D0MXeo6nRreoE8\")",
-      "Bash(__NEW_LINE__ curl -s -X POST http://localhost:5001/api/v1/reviews )"
+      "Bash(__NEW_LINE__ curl -s -X POST https://apihotel.novic.dev/api/v1/reviews )",
+      "Bash(python3:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWk5NXM3c20wMDA3Z2xybHA4bDhsN3NuIiwiZW1haWwiOiJ0ZXN0LnZlcmlmaWNhdGlvbjJAZXhhbXBsZS5jb20iLCJyb2xlIjoiR1VFU1QiLCJob3RlbElkIjoiY21oM2l5Z2V3MDAwMDljcnpzbHM2cmx6eSIsInR5cGUiOiJndWVzdCIsImlhdCI6MTc2Mzc0NzYwMiwiZXhwIjoxNzY0MzUyNDAyfQ.BAZmNcZeHVKVgNtTTibg5FR3kgtzEVe7y5xBX9AtjEE\")",
+      "Bash(__NEW_LINE__ curl -s -X GET \"https://apihotel.novic.dev/api/v1/reviews/my-reviews\" -H \"Authorization: Bearer $TOKEN\")",
+      "Bash(__NEW_LINE__ curl -s -X POST \"https://apihotel.novic.dev/api/v1/reviews/cmi95swgh0009glrljbzigsxc/helpful\" )",
+      "Bash(node scripts/generate-icons.js:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWk5cnFwdDcwMDBkZ2xybGdobzFsMWg0IiwiZW1haWwiOiJ0ZXN0LnZlcmlmaWNhdGlvbjk5QGV4YW1wbGUuY29tIiwicm9sZSI6IkdVRVNUIiwiaG90ZWxJZCI6ImNtaDNpeWdldzAwMDA5Y3J6c2xzNnJsenkiLCJ0eXBlIjoiZ3Vlc3QiLCJpYXQiOjE3NjM3ODQ0ODMsImV4cCI6MTc2NDM4OTI4M30.E7WxwncURBFsu2-3nwAk3y_Su4xUZkyX4OHgpC3hXc4\")",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWk5NXM3c20wMDA3Z2xybHA4bDhsN3NuIiwiZW1haWwiOiJ0ZXN0LnZlcmlmaWNhdGlvbjJAZXhhbXBsZS5jb20iLCJyb2xlIjoiR1VFU1QiLCJob3RlbElkIjoiY21oM2l5Z2V3MDAwMDljcnpzbHM2cmx6eSIsInR5cGUiOiJndWVzdCIsImlhdCI6MTc2Mzc4NDYwMSwiZXhwIjoxNzY0Mzg5NDAxfQ.-1Mn_qowE_Sbonnjh8udHGUd7KRnLQOML8lFEDqa4aY\")",
+      "Bash(chmod:*)",
+      "Bash(bash scripts/prepare-deployment.sh:*)",
+      "Bash(zip:*)",
+      "Bash(bash scripts/create-vps-package.sh:*)"
     ],
     "deny": [],
     "ask": []

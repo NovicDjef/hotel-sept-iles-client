@@ -460,7 +460,7 @@ Résultat:
 
 ```typescript
 // services/api/Api.ts
-export const hotelId = 'cmh3iygew00009crzsls6rlzy'
+export const hotelId = 'cmiajn0ck0000r37cliherz4z'
 ```
 
 ### Routes Backend Requises

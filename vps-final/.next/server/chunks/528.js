@@ -1,0 +1,1 @@
+"use strict";exports.id=528,exports.ids=[528],exports.modules={94528:(a,b,c)=>{c.d(b,{generateReceiptPDF:()=>d});let d=async a=>{console.warn("generateReceiptPDF appel\xe9 c\xf4t\xe9 serveur, ignor\xe9")}}};

@@ -56,6 +56,7 @@ export function Navigation() {
             {/* Logo */}
             <Link
               href="/"
+              prefetch={true}
               className="flex items-center gap-3 group"
             >
               <motion.div
@@ -86,6 +87,7 @@ export function Navigation() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  prefetch={true}
                   className={`relative px-4 py-2 text-sm font-medium transition-colors ${
                     pathname === link.href
                       ? 'text-white'
@@ -108,6 +110,7 @@ export function Navigation() {
             <div className="hidden lg:flex items-center gap-3">
               {/* <Link
                 href="/mon-compte"
+                prefetch={true}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-colors"
               >
                 <User className="h-4 w-4" />
@@ -115,6 +118,7 @@ export function Navigation() {
               </Link> */}
               <Link
                 href="/chambres"
+                prefetch={true}
                 className="btn-gold"
               >
                 <Calendar className="h-4 w-4" />
@@ -198,6 +202,7 @@ export function Navigation() {
                       >
                         <Link
                           href={link.href}
+                          prefetch={true}
                           onClick={() => setIsOpen(false)}
                           className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition-colors ${
                             pathname === link.href
@@ -233,6 +238,7 @@ export function Navigation() {
                 <div className="border-t border-neutral-200 p-6 space-y-3">
                   <Link
                     href="/mon-compte"
+                    prefetch={true}
                     onClick={() => setIsOpen(false)}
                     className="btn-secondary w-full"
                   >
@@ -241,6 +247,7 @@ export function Navigation() {
                   </Link>
                   <Link
                     href="/chambres"
+                    prefetch={true}
                     onClick={() => setIsOpen(false)}
                     className="btn-primary w-full"
                   >

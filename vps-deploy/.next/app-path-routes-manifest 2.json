@@ -1,0 +1,14 @@
+{
+  "/favicon.ico/route": "/favicon.ico",
+  "/_not-found/page": "/_not-found",
+  "/(client)/page": "/",
+  "/(client)/confidentialite/page": "/confidentialite",
+  "/(client)/conditions/page": "/conditions",
+  "/(client)/chambres/[id]/page": "/chambres/[id]",
+  "/(client)/chambres/page": "/chambres",
+  "/(client)/services/page": "/services",
+  "/(client)/avis/page": "/avis",
+  "/(client)/contact/page": "/contact",
+  "/(client)/reservation/page": "/reservation",
+  "/(client)/reservation/[chambreId]/page": "/reservation/[chambreId]"
+}

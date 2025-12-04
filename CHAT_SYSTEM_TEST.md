@@ -259,8 +259,9 @@ curl -X POST http://localhost:5001/api/v1/chat/CONVERSATION_ID/messages \
 ## 📝 Notes
 
 - **Port du frontend :** 3001
-- **Port du backend :** 5001
+- **Port du backend :** 
 - **HotelId :** cmh3iygew00009crzsls6rlzy
+- **HotelId PROD :** cmiajn0ck0000r37cliherz4z
 - **Polling interval :** 3 secondes
 - **Taille du widget :** 400x600px
 

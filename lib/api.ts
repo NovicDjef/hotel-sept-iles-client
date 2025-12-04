@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Configuration de base
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://apihotel.novic.dev'
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

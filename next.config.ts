@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  reactStrictMode: true,
+
+  // Configuration pour serveur Node.js (VPS)
+  output: 'standalone',
+
+  // Prefetch settings for better navigation performance
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'framer-motion'],
+  },
+
   images: {
     remotePatterns: [
       {

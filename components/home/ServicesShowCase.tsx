@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, memo } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -20,9 +20,9 @@ import {
 } from 'lucide-react'
 
 
-export function ServicesShowcase() {
+export const ServicesShowcase = memo(function ServicesShowcase() {
 
-   
+
    const dispatch = useAppDispatch()
    const [selectedService, setSelectedService] = useState<string | null>(null)
  
@@ -306,4 +306,4 @@ export function ServicesShowcase() {
       </div>
     </section>
   )
-}
+})

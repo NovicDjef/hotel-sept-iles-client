@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Star, ArrowRight, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { getHotelReviews, getHotelReviewsStats } from '@/services/api/routeApi'
 import { hotelId } from '@/services/api/Api'
+import { apiCache } from '@/lib/apiCache'
 
 // Type pour les avis
 interface Avis {
@@ -17,6 +18,8 @@ interface Avis {
   date: string
   commentaire: string
   chambre: string
+  hotelResponse?: string | null
+  hotelResponseDate?: string | null
 }
 
 // Fonction pour formater la date relative
@@ -38,7 +41,7 @@ function formatRelativeDate(dateString: string): string {
   }
 }
 
-export function TestimonialsSection() {
+export const TestimonialsSection = memo(function TestimonialsSection() {
   const [avis, setAvis] = useState<Avis[]>([])
   const [notesMoyenne, setNotesMoyenne] = useState(0)
   const [totalAvis, setTotalAvis] = useState(0)
@@ -50,10 +53,10 @@ export function TestimonialsSection() {
         setLoading(true)
         console.log('🏠 Chargement des avis pour la page d\'accueil')
 
-        // Charger les avis et les stats en parallèle
+        // Charger les avis et les stats en parallèle avec cache (2 minutes de TTL)
         const [reviewsResponse, statsResponse] = await Promise.all([
-          getHotelReviews(hotelId),
-          getHotelReviewsStats(hotelId)
+          apiCache.get(`reviews-${hotelId}`, () => getHotelReviews(hotelId), 2 * 60 * 1000),
+          apiCache.get(`reviews-stats-${hotelId}`, () => getHotelReviewsStats(hotelId), 2 * 60 * 1000)
         ])
 
         // Transformer les avis
@@ -68,7 +71,9 @@ export function TestimonialsSection() {
                 note: typeof review.overallRating === 'number' ? review.overallRating : 5,
                 date: review.createdAt || new Date().toISOString(),
                 commentaire: review.comment || '',
-                chambre: review.roomName || 'Chambre'
+                chambre: review.roomName || 'Chambre',
+                hotelResponse: review.hotelResponse || null,
+                hotelResponseDate: review.hotelResponseDate || null
               }))
           : []
         setAvis(transformedReviews)
@@ -212,6 +217,26 @@ export function TestimonialsSection() {
                 {testimonial.commentaire}
               </p>
 
+              {/* Réponse de l'hôtel (si elle existe) */}
+              {testimonial.hotelResponse && (
+                <div className="mt-4 p-4 bg-primary-50 border-l-4 border-primary-600 rounded-r">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
+                      <span className="text-white text-xs font-semibold">H</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-primary-900">Réponse de l'hôtel</p>
+                      <p className="text-xs text-neutral-500">
+                        {testimonial.hotelResponseDate && formatRelativeDate(testimonial.hotelResponseDate)}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-neutral-700 leading-relaxed">
+                    {testimonial.hotelResponse}
+                  </p>
+                </div>
+              )}
+
               <div className="pt-4 border-t border-neutral-100">
                 <span className="text-xs text-neutral-500">
                   Chambre :
@@ -241,4 +266,4 @@ export function TestimonialsSection() {
       </div>
     </section>
   )
-}
+})

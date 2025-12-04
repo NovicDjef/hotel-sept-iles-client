@@ -1,0 +1,16 @@
+# Redirection vers le serveur Node.js
+RewriteEngine On
+RewriteBase /
+
+# Ne pas rediriger les fichiers statiques
+RewriteCond %{REQUEST_URI} !^/\.well-known/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Proxy vers Node.js
+RewriteRule ^(.*)$ http://localhost:3000/$1 [P,L]
+
+# Headers de sécurité
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "SAMEORIGIN"
+Header set X-XSS-Protection "1; mode=block"

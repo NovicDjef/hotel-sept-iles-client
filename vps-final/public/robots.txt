@@ -1,0 +1,11 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /_next/
+
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+
+Sitemap: https://hotel-sept-iles.com/sitemap.xml

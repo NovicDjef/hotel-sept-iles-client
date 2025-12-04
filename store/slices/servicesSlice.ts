@@ -9,6 +9,7 @@ import {
   transformApiCertificatToCertificat,
   transformCertificatAmountToCertificat
 } from '@/types/service'
+import { apiCache } from '@/lib/apiCache'
 
 // État initial
 interface ServicesState {
@@ -43,7 +44,9 @@ export const fetchServices = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const { getAllServices } = await import('@/services/api/routeApi')
-      const response = await getAllServices()
+
+      // Utiliser le cache (TTL: 3 minutes)
+      const response = await apiCache.get('spa-services', () => getAllServices(), 3 * 60 * 1000)
       console.log('Réponse API services:', response.data)
 
       // L'API retourne { success, message, data }
@@ -75,7 +78,9 @@ export const fetchForfaits = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const { getAllForfaits } = await import('@/services/api/routeApi')
-      const response = await getAllForfaits()
+
+      // Utiliser le cache (TTL: 3 minutes)
+      const response = await apiCache.get('spa-forfaits', () => getAllForfaits(), 3 * 60 * 1000)
       console.log('Réponse API forfaits:', response.data)
 
       const apiForfaits = response.data.data || response.data
@@ -106,7 +111,9 @@ export const fetchCertificats = createAsyncThunk(
     try {
       // Utiliser le nouvel endpoint /amounts pour récupérer les montants disponibles
       const { getCertificatsAmounts } = await import('@/services/api/routeApi')
-      const response = await getCertificatsAmounts()
+
+      // Utiliser le cache (TTL: 5 minutes - données rarement changeantes)
+      const response = await apiCache.get('spa-certificats', () => getCertificatsAmounts(), 5 * 60 * 1000)
       console.log('Réponse API certificats amounts:', response.data)
 
       const apiCertificatsAmounts = response.data.data || response.data
@@ -137,7 +144,9 @@ export const fetchSpaCategories = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const { getSpaCategories } = await import('@/services/api/routeApi')
-      const response = await getSpaCategories()
+
+      // Utiliser le cache (TTL: 10 minutes - données très rarement changeantes)
+      const response = await apiCache.get('spa-categories', () => getSpaCategories(), 10 * 60 * 1000)
       console.log('Réponse API catégories:', response.data)
 
       // L'API retourne { success, message, data }

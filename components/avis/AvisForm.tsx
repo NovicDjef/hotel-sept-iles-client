@@ -16,22 +16,27 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
     auteur: '',
     email: '',
     chambre: '',
-    note: 5,
+    note: 5, // Note globale
+    cleanlinessRating: 5,
+    serviceRating: 5,
+    locationRating: 5,
+    valueRating: 5,
     titre: '',
     commentaire: '',
+    stayDate: new Date().toISOString().split('T')[0], // Format YYYY-MM-DD
   })
   const [photos, setPhotos] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [showDetailedRatings, setShowDetailedRatings] = useState(false)
 
   const chambres = [
-    'Suite Royale',
-    'Chambre Deluxe',
+    'Chambre Lit Simple',
+    'Chambre Lit Double',
     'Suite Familiale',
-    'Chambre Confort',
-    'Suite Exécutive',
-    'Suite Panoramique',
+    'Chambre RESIDENTIAL',
+    
   ]
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,7 +63,19 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
         throw new Error('Le commentaire est requis')
       }
       if (formData.note < 1 || formData.note > 5) {
-        throw new Error('La note doit être entre 1 et 5')
+        throw new Error('La note globale doit être entre 1 et 5')
+      }
+      if (formData.cleanlinessRating < 1 || formData.cleanlinessRating > 5) {
+        throw new Error('La note de propreté doit être entre 1 et 5')
+      }
+      if (formData.serviceRating < 1 || formData.serviceRating > 5) {
+        throw new Error('La note de service doit être entre 1 et 5')
+      }
+      if (formData.locationRating < 1 || formData.locationRating > 5) {
+        throw new Error('La note d\'emplacement doit être entre 1 et 5')
+      }
+      if (formData.valueRating < 1 || formData.valueRating > 5) {
+        throw new Error('La note du rapport qualité/prix doit être entre 1 et 5')
       }
 
       // Validation de l'email
@@ -88,12 +105,16 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
 
       console.log('✅ Authentification guest réussie')
 
-      // Préparer les données pour l'API
+      // Préparer les données pour l'API avec le format exact attendu par le backend
       const reviewData = {
         hotelId: hotelId,
         roomName: formData.chambre,
-        stayDate: new Date().toLocaleDateString('fr-CA', { month: 'long', year: 'numeric' }),
+        stayDate: new Date(formData.stayDate).toISOString(), // Format ISO complet
         overallRating: formData.note,
+        cleanlinessRating: formData.cleanlinessRating,
+        serviceRating: formData.serviceRating,
+        locationRating: formData.locationRating,
+        valueRating: formData.valueRating,
         title: formData.titre.trim(),
         comment: formData.commentaire.trim(),
         photos: photos.length > 0 ? photos : undefined,
@@ -135,11 +156,17 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
           email: '',
           chambre: '',
           note: 5,
+          cleanlinessRating: 5,
+          serviceRating: 5,
+          locationRating: 5,
+          valueRating: 5,
           titre: '',
           commentaire: '',
+          stayDate: new Date().toISOString().split('T')[0],
         })
         setPhotos([])
         setSubmitStatus('idle')
+        setShowDetailedRatings(false)
       }, 2000)
 
     } catch (error: any) {
@@ -165,6 +192,19 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // Fonction pour mettre à jour la note globale et synchroniser les notes détaillées
+  const handleOverallRatingChange = (rating: number) => {
+    setFormData({
+      ...formData,
+      note: rating,
+      // Synchroniser toutes les notes détaillées avec la note globale
+      cleanlinessRating: rating,
+      serviceRating: rating,
+      locationRating: rating,
+      valueRating: rating,
+    })
   }
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -286,6 +326,21 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
             </select>
           </div>
 
+          {/* Date du séjour */}
+          <div>
+            <label className="block text-sm font-semibold text-neutral-700 mb-2">
+              Date du séjour *
+            </label>
+            <input
+              type="date"
+              required
+              value={formData.stayDate}
+              onChange={(e) => setFormData({ ...formData, stayDate: e.target.value })}
+              max={new Date().toISOString().split('T')[0]}
+              className="input-custom"
+            />
+          </div>
+
           {/* Note */}
           <div>
             <label className="block text-sm font-semibold text-neutral-700 mb-3">
@@ -298,7 +353,7 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
                   type="button"
                   whileHover={{ scale: 1.2 }}
                   whileTap={{ scale: 0.9 }}
-                  onClick={() => setFormData({ ...formData, note: star })}
+                  onClick={() => handleOverallRatingChange(star)}
                   className="focus:outline-none"
                 >
                   <Star
@@ -314,7 +369,132 @@ export function AvisForm({ onSubmit }: AvisFormProps) {
                 {formData.note}.0
               </span>
             </div>
+
+            {/* Bouton pour afficher les notes détaillées */}
+            <button
+              type="button"
+              onClick={() => setShowDetailedRatings(!showDetailedRatings)}
+              className="text-sm text-primary-600 hover:text-primary-700 underline mt-2"
+            >
+              {showDetailedRatings ? 'Masquer' : 'Afficher'} les notes détaillées (optionnel)
+            </button>
           </div>
+
+          {/* Notes détaillées (optionnel) */}
+          {showDetailedRatings && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-4 bg-neutral-50 p-6 rounded-xl border border-neutral-200"
+            >
+              <h3 className="font-semibold text-neutral-900 mb-4">Notes détaillées</h3>
+
+              {/* Propreté */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Propreté
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, cleanlinessRating: star })}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`h-6 w-6 transition-all ${
+                          star <= formData.cleanlinessRating
+                            ? 'text-yellow-500 fill-yellow-500'
+                            : 'text-neutral-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm text-neutral-600">{formData.cleanlinessRating}/5</span>
+                </div>
+              </div>
+
+              {/* Service */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Service
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, serviceRating: star })}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`h-6 w-6 transition-all ${
+                          star <= formData.serviceRating
+                            ? 'text-yellow-500 fill-yellow-500'
+                            : 'text-neutral-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm text-neutral-600">{formData.serviceRating}/5</span>
+                </div>
+              </div>
+
+              {/* Emplacement */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Emplacement
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, locationRating: star })}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`h-6 w-6 transition-all ${
+                          star <= formData.locationRating
+                            ? 'text-yellow-500 fill-yellow-500'
+                            : 'text-neutral-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm text-neutral-600">{formData.locationRating}/5</span>
+                </div>
+              </div>
+
+              {/* Rapport qualité/prix */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Rapport qualité/prix
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, valueRating: star })}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`h-6 w-6 transition-all ${
+                          star <= formData.valueRating
+                            ? 'text-yellow-500 fill-yellow-500'
+                            : 'text-neutral-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm text-neutral-600">{formData.valueRating}/5</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Titre */}
           <div>

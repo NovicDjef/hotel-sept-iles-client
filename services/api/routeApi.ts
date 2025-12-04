@@ -1,9 +1,8 @@
-import apiService, { hotelId } from './Api'
+import apiService from './Api'
 import { Room, ApiRoom } from '@/types/room'
 
 // ==================== ROOM TYPES (INVENTAIRE) ====================
-
-export { hotelId }
+const hotelId = `cmiajn0ck0000r37cliherz4z`
 
 /**
  * Récupère tous les types de chambres d'un hôtel

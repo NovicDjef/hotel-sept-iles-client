@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import { Room, transformRoomTypeToRoom } from '@/types/room'
+import { apiCache } from '@/lib/apiCache'
 
 // État initial
 interface RoomsState {
@@ -40,7 +41,9 @@ export const fetchRooms = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const { getAllRoomTypes } = await import('@/services/api/routeApi')
-      const response = await getAllRoomTypes()
+
+      // Utiliser le cache pour éviter les requêtes répétées (TTL: 3 minutes)
+      const response = await apiCache.get('room-types', () => getAllRoomTypes(), 3 * 60 * 1000)
       console.log('✅ Réponse API room-types:', response.data)
 
       // L'API retourne { success, message, data: { hotel, roomTypes } }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, memo } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -22,7 +22,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import { fetchRooms } from '@/store/slices/roomsSlice'
 import { MaintenanceMessage } from '@/components/common/MaintenanceMessage'
 
-export function FeaturedRooms() {
+export const FeaturedRooms = memo(function FeaturedRooms() {
   const dispatch = useAppDispatch()
   const { rooms, loading, error } = useAppSelector((state) => state.rooms)
 
@@ -286,4 +286,4 @@ export function FeaturedRooms() {
       </div>
     </section>
   )
-}
+})

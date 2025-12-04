@@ -3,8 +3,9 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Calendar, Phone, Mail, ArrowRight, Sparkles } from 'lucide-react'
+import { memo } from 'react'
 
-export function CTASection() {
+export const CTASection = memo(function CTASection() {
   return (
     <section className="py-16 lg:py-24 section-gradient relative overflow-hidden">
       <div className="absolute inset-0">
@@ -160,4 +161,4 @@ export function CTASection() {
       </div>
     </section>
   )
-}
+})
