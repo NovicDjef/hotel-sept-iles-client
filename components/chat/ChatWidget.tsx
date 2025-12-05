@@ -112,7 +112,7 @@ export const ChatWidget: React.FC = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-110 z-50 flex items-center gap-2"
+          className="fixed bottom-4 right-4 md:bottom-6 md:right-6 bg-blue-600 text-white p-3 md:p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-110 z-50 flex items-center gap-2"
           aria-label="Ouvrir le chat"
         >
           <MessageCircle className="w-6 h-6" />
@@ -127,7 +127,7 @@ export const ChatWidget: React.FC = () => {
       {/* Fenêtre de chat */}
       {isOpen && (
         <div
-          className={`fixed bottom-6 right-6 w-96 h-[600px] bg-white rounded-lg shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300 ${
+          className={`fixed inset-0 md:inset-auto md:bottom-6 md:right-6 md:w-96 md:h-[600px] w-full h-full bg-white md:rounded-lg shadow-2xl z-50 flex flex-col overflow-hidden transition-all duration-300 ${
             isMinimized ? 'scale-95 opacity-0' : 'scale-100 opacity-100'
           }`}
         >

@@ -212,7 +212,7 @@ export const EnhancedReservationForm: React.FC = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">
                   <Calendar className="inline w-4 h-4 mr-1" />
                   Date d'arrivée
                 </label>
@@ -221,12 +221,12 @@ export const EnhancedReservationForm: React.FC = () => {
                   value={checkInDate}
                   onChange={(e) => setCheckInDate(e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-11 md:h-auto"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">
                   <Calendar className="inline w-4 h-4 mr-1" />
                   Date de départ
                 </label>
@@ -235,20 +235,20 @@ export const EnhancedReservationForm: React.FC = () => {
                   value={checkOutDate}
                   onChange={(e) => setCheckOutDate(e.target.value)}
                   min={checkInDate || new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent h-11 md:h-auto"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">
                 <Users className="inline w-4 h-4 mr-1" />
                 Nombre de personnes
               </label>
               <select
                 value={numberOfGuests}
                 onChange={(e) => setNumberOfGuests(Number(e.target.value))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 md:px-4 py-2.5 md:py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-11 md:h-auto"
               >
                 {[1, 2, 3, 4, 5, 6].map((num) => (
                   <option key={num} value={num}>

@@ -24,7 +24,8 @@
       "Bash(chmod:*)",
       "Bash(bash scripts/prepare-deployment.sh:*)",
       "Bash(zip:*)",
-      "Bash(bash scripts/create-vps-package.sh:*)"
+      "Bash(bash scripts/create-vps-package.sh:*)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []

@@ -57,53 +57,53 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white rounded-2xl shadow-medium p-4 transition-all duration-300 ${
+      className={`bg-white rounded-2xl shadow-medium p-3 md:p-4 transition-all duration-300 ${
         hasActiveFilters ? 'ring-2 ring-primary-500/20' : ''
       }`}
     >
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
         <div>
-          <label className="block text-xs font-medium text-neutral-700 mb-2">
+          <label className="block text-xs md:text-sm font-medium text-neutral-700 mb-2">
             Arrivée
           </label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none z-10" />
             <input
               type="date"
               value={checkIn}
               onChange={(e) => handleCheckInChange(e.target.value)}
-              className="input-custom pl-10"
+              className="input-custom pl-10 text-sm md:text-base h-11 md:h-10"
               min={new Date().toISOString().split('T')[0]}
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral-700 mb-2">
+          <label className="block text-xs md:text-sm font-medium text-neutral-700 mb-2">
             Départ
           </label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none z-10" />
             <input
               type="date"
               value={checkOut}
               onChange={(e) => handleCheckOutChange(e.target.value)}
-              className="input-custom pl-10"
+              className="input-custom pl-10 text-sm md:text-base h-11 md:h-10"
               min={checkIn || new Date().toISOString().split('T')[0]}
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral-700 mb-2">
+          <label className="block text-xs md:text-sm font-medium text-neutral-700 mb-2">
             Personnes
           </label>
           <div className="relative">
-            <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
+            <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400 pointer-events-none z-10" />
             <select
               value={guests}
               onChange={(e) => handleGuestsChange(Number(e.target.value))}
-              className="input-custom pl-10"
+              className="input-custom pl-10 text-sm md:text-base h-11 md:h-10"
             >
               {[1, 2, 3, 4, 5, 6].map((num) => (
                 <option key={num} value={num}>
@@ -119,12 +119,13 @@ export function SearchBar({ onSearch }: SearchBarProps) {
             onClick={handleSearch}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className={`relative btn-primary w-full justify-center transition-all duration-300 ${
+            className={`relative btn-primary w-full justify-center transition-all duration-300 h-11 md:h-10 text-sm md:text-base ${
               hasActiveFilters ? 'bg-gradient-to-r from-primary-600 to-primary-700 shadow-lg' : ''
             }`}
           >
             <Search className="h-5 w-5" />
-            Rechercher
+            <span className="hidden sm:inline">Rechercher</span>
+            <span className="sm:hidden">OK</span>
             {hasActiveFilters && (
               <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent-gold text-[10px] font-bold text-neutral-900 shadow-md">
                 {[checkIn, checkOut, guests > 2].filter(Boolean).length}

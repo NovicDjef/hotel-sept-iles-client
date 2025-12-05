@@ -8,7 +8,7 @@
   "/(client)/chambres/page": "/chambres",
   "/(client)/avis/page": "/avis",
   "/(client)/reservation/[chambreId]/page": "/reservation/[chambreId]",
+  "/(client)/reservation/page": "/reservation",
   "/(client)/contact/page": "/contact",
-  "/(client)/services/page": "/services",
-  "/(client)/reservation/page": "/reservation"
+  "/(client)/services/page": "/services"
 }

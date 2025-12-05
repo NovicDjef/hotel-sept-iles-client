@@ -74,10 +74,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="bg-blue-600 text-white px-4 py-3 rounded-t-lg">
+      <div className="bg-blue-600 text-white px-4 py-3 md:rounded-t-lg">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold">Chat avec l'hôtel</h3>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-base md:text-lg">Chat avec l'hôtel</h3>
             <p className="text-xs text-blue-100">
               <span className="flex items-center gap-1">
                 <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
@@ -85,7 +85,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
               </span>
             </p>
           </div>
-          <p className="text-sm text-blue-100">{guestName}</p>
+          <p className="text-sm text-blue-100 truncate max-w-[120px] md:max-w-none">{guestName}</p>
         </div>
       </div>
 
@@ -104,7 +104,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       </div>
 
       {/* Input form */}
-      <div className="border-t bg-white p-4">
+      <div className="border-t bg-white p-3 md:p-4 safe-bottom">
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input
             ref={inputRef}
@@ -114,12 +114,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             onKeyPress={handleKeyPress}
             placeholder="Tapez votre message..."
             disabled={isLoading}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:opacity-50"
+            className="flex-1 px-3 md:px-4 py-2.5 md:py-2 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={!inputMessage.trim() || isLoading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="bg-blue-600 text-white px-3 md:px-4 py-2.5 md:py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[44px]"
+            aria-label="Envoyer le message"
           >
             {isLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
