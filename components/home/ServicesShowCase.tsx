@@ -1,48 +1,30 @@
 'use client'
 
-import { useEffect, useState, memo } from 'react'
+import { useEffect, memo } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
-import { } from 'lucide-react'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { fetchAllSpaData, setCategory } from '@/store/slices/servicesSlice'
+import { fetchAllSpaData } from '@/store/slices/servicesSlice'
 import {
   Sparkles,
   Clock,
-  Tag,
-  Calendar,
-  ArrowRight,
-  Check,
-  Star,
-  Heart,
-  Gift
+  ArrowRight
 } from 'lucide-react'
 
 
 export const ServicesShowcase = memo(function ServicesShowcase() {
-
-
    const dispatch = useAppDispatch()
-   const [selectedService, setSelectedService] = useState<string | null>(null)
- 
+
    // Récupérer les données depuis Redux
    const {
      filteredServices,
-     forfaits,
-     certificats,
-     categories,
      loading,
-     error,
-     filters
+     error
    } = useAppSelector((state) => state.services)
- 
-   // Plus de données locales - tout vient de l'API
-   const services = filteredServices
-   const forfaitsList = forfaits
-   const certificatsList = certificats
- const featuredServices = services.slice(0, 5)
-  console.log('Chambres en vedette:', featuredServices)
+
+   // Afficher les 5 premiers services en vedette
+   const featuredServices = filteredServices.slice(0, 5)
    // Charger les données au montage du composant
    useEffect(() => {
      const initAndFetchData = async () => {
@@ -196,113 +178,18 @@ export const ServicesShowcase = memo(function ServicesShowcase() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-8"
+              className="text-center"
             >
               <Link
                 href="/services"
                 className="btn-primary group"
               >
-                Voir toutes les offres
+                Voir tous nos services spa
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </motion.div>
           )}
 
-        {/* Section offre combinée - Affichage des forfaits depuis l'API */}
-        {forfaitsList && forfaitsList.length > 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="card-premium p-8 lg:p-10 text-center"
-          >
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-gold mb-6 shadow-glow-gold">
-              <Gift className="h-8 w-8 text-neutral-900" />
-            </div>
-
-            <h3 className="font-display text-2xl lg:text-3xl font-bold text-neutral-900 mb-3">
-              {forfaitsList[0].nom}
-            </h3>
-            <p className="text-neutral-600 mb-6 max-w-2xl mx-auto">
-              {forfaitsList[0].description}
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-display font-bold text-primary-600">
-                  {forfaitsList[0].prixIndividuel}$
-                </span>
-                {forfaitsList[0].economieIndividuel > 0 && (
-                  <>
-                    <span className="text-neutral-500 line-through text-lg">
-                      {forfaitsList[0].prixIndividuel + forfaitsList[0].economieIndividuel}$
-                    </span>
-                    <span className="badge-success">
-                      -{Math.round((forfaitsList[0].economieIndividuel / (forfaitsList[0].prixIndividuel + forfaitsList[0].economieIndividuel)) * 100)}%
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Affichage des services inclus */}
-            {forfaitsList[0].services && forfaitsList[0].services.length > 0 && (
-              <div className="mt-6 max-w-xl mx-auto">
-                <p className="text-sm font-medium text-neutral-700 mb-3">Services inclus:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
-                  {forfaitsList[0].services.map((service, idx: number) => (
-                      <div key={idx} className="flex items-center gap-2 text-sm text-neutral-600">
-                        <Check className="h-4 w-4 text-primary-600" />
-                        <span>{service.nom}</span>
-                      </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/services" className="btn-gold">
-                <Sparkles className="h-4 w-4" />
-                Découvrir les forfaits
-              </Link>
-              <Link href="/chambres" className="btn-secondary">
-                Réserver avec une chambre
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="card-premium p-8 lg:p-10 text-center"
-          >
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-gold mb-6 shadow-glow-gold">
-              <Sparkles className="h-8 w-8 text-neutral-900" />
-            </div>
-
-            <h3 className="font-display text-2xl lg:text-3xl font-bold text-neutral-900 mb-3">
-              Nos Forfaits Spa
-            </h3>
-            <p className="text-neutral-600 mb-6 max-w-2xl mx-auto">
-              Combinez plusieurs services et économisez.
-              Le forfait idéal pour une journée de bien-être absolue.
-            </p>
-
-            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/services" className="btn-gold">
-                <Sparkles className="h-4 w-4" />
-                Découvrir les forfaits
-              </Link>
-              <Link href="/chambres" className="btn-secondary">
-                Réserver avec une chambre
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </motion.div>
-        )}
-         
       </div>
     </section>
   )

@@ -18,7 +18,7 @@ export function HeroSection() {
           alt="Hôtel Sept-Îles"
           fill
           priority
-          className="object-cover brightness-50"
+          className="object-cover brightness-92"
           quality={90}
         />
         {/* Overlay gradient */}
@@ -76,9 +76,9 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="font-display text-4xl md:text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight"
+            className="font-display text-4xl md:text-5xl lg:text-7xl font-bold text-white mb-4 leading-tight"
           >
-            Votre oasis de luxe sur la{' '}
+            Votre oasis sur la,  {' '}
             <span className="text-gradient-gold">Côte-Nord</span>
           </motion.h1>
 

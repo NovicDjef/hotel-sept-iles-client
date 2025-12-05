@@ -17,7 +17,9 @@ import {
 } from 'lucide-react'
 import { HeroSection } from '@/components/home/HeroSection'
 import { FeaturedRooms } from '@/components/home/FeaturedRooms'
+import { RestaurantSection } from '@/components/home/RestaurantSection'
 import { ServicesShowcase } from '@/components/home/ServicesShowCase'
+import { RentalServicesSection } from '@/components/home/RentalServicesSection'
 import { TestimonialsSection } from '@/components/home/TestimonialsSection'
 import { CTASection } from '@/components/home/CTASection'
 
@@ -30,8 +32,14 @@ export default function HomePage() {
       {/* Chambres en vedette */}
       <FeaturedRooms />
 
+      {/* Restaurant & Bar */}
+      <RestaurantSection />
+
       {/* Services Spa */}
       <ServicesShowcase />
+
+      {/* Location d'espaces */}
+      <RentalServicesSection />
 
       {/* Section Commodités */}
       <section className="py-16 lg:py-24 bg-neutral-50">
