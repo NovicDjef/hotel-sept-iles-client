@@ -37,7 +37,9 @@ export function RestaurantSection() {
       description: 'Un cadre élégant avec vue sur la ville'
     }
   ]
-
+  const imageRestourants1 = '/images/restaurant/a.jpg'
+  const imageRestourants2 = '/images/restaurant/b.jpg'  
+   
   const hours = [
     { day: 'Petit-déjeuner', time: '6h30 - 11h00' },
     { day: 'Déjeuner', time: '11h30 - 14h00' },
@@ -85,7 +87,7 @@ export function RestaurantSection() {
           >
             <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-strong">
               <Image
-                src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=2070&auto=format&fit=crop"
+                src={imageRestourants1}
                 alt="Restaurant de l'Hôtel Sept-Îles"
                 fill
                 className="object-cover"
@@ -119,7 +121,7 @@ export function RestaurantSection() {
               className="absolute -bottom-6 -right-6 w-2/5 aspect-square rounded-2xl overflow-hidden shadow-strong border-4 border-white"
             >
               <Image
-                src="https://images.unsplash.com/photo-1572116469696-31de0f17cc34?q=80&w=1974&auto=format&fit=crop"
+                src={imageRestourants2}
                 alt="Bar de l'hôtel"
                 fill
                 className="object-cover"

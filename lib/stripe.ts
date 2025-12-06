@@ -1,22 +1,18 @@
 import { loadStripe, Stripe } from '@stripe/stripe-js'
 
-let stripePromise: Promise<Stripe | null> | null = null
+let stripePromise: Promise<Stripe | null>
 
 export const getStripe = () => {
-  // Ne charger Stripe que côté client
-  if (typeof window === 'undefined') {
-    return null
-  }
-
   if (!stripePromise) {
-    // Remplacez par votre clé publique Stripe
-    const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
-    if (!publishableKey) {
-      console.warn('⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY n\'est pas défini')
+    if (!key) {
+      console.error('Stripe publishable key is not defined')
+      return Promise.resolve(null)
     }
 
-    stripePromise = loadStripe(publishableKey)
+    stripePromise = loadStripe(key)
   }
+
   return stripePromise
 }

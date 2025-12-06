@@ -25,7 +25,7 @@ export function RentalServicesSection() {
       description: 'Espace modulable pouvant accueillir jusqu\'à 200 personnes',
       capacity: '200 personnes',
       size: '250 m²',
-      image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=2012&auto=format&fit=crop',
+      image: 'https://www.tourismecote-nord.com/fichiersUploadOpt/1200-628-0-0-1920-1228-0-0-dba41563aa09ec78457dd7fd0caaa6fc71b51ae9d50668b01/20220301100739-salle-de-congres.jpg',
       features: ['Système audio/vidéo professionnel', 'Scène équipée', 'Éclairage de spectacle', 'Loges'],
       color: 'from-purple-600 to-purple-900'
     },

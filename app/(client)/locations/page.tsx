@@ -54,9 +54,9 @@ export default function LocationsPage() {
 
   const sallesReception = [
     {
-      name: 'Salle Multi-Main',
-      capacity: '200-300 personnes',
-      size: '400 m²',
+      name: 'Salon corosol',
+      capacity: '400-500 personnes',
+      size: '600 m²',
       description: 'Notre plus grande salle, idéale pour les mariages, galas et grandes célébrations',
       features: [
         'Espace modulable selon vos besoins',
@@ -66,13 +66,13 @@ export default function LocationsPage() {
         'Décoration personnalisable',
         'Piste de danse spacieuse'
       ],
-      image: 'https://images.unsplash.com/photo-1519167758481-83f29da8c6f1?q=80&w=2098&auto=format&fit=crop',
+      image: 'https://media.abcsalles.com/images/1/salles/720x540/935818/brit-hotel-le-cygne-1.jpg',
       idealFor: ['Mariages', 'Galas', 'Conférences', 'Grandes réceptions']
     },
     {
       name: 'Salle Basques',
-      capacity: '80-120 personnes',
-      size: '150 m²',
+      capacity: '200-300 personnes',
+      size: '250 m²',
       description: 'Salle élégante et chaleureuse, parfaite pour les événements intimes',
       features: [
         'Ambiance conviviale',
@@ -86,9 +86,9 @@ export default function LocationsPage() {
       idealFor: ['Anniversaires', 'Réceptions familiales', 'Cocktails', 'Fêtes d\'entreprise']
     },
     {
-      name: 'Salle Côte-Nord',
-      capacity: '50-80 personnes',
-      size: '100 m²',
+      name: 'Salon Manowin',
+      capacity: '50-150 personnes',
+      size: '180 m²',
       description: 'Salle intime avec vue panoramique, idéale pour les célébrations privées',
       features: [
         'Vue sur la ville',
@@ -98,7 +98,7 @@ export default function LocationsPage() {
         'Climatisation',
         'Service traiteur disponible'
       ],
-      image: 'https://images.unsplash.com/photo-1478146896981-b80fe463b330?q=80&w=2070&auto=format&fit=crop',
+      image: 'https://www.hotelalex.ch/wp-content/uploads/2023/06/seminarraum-hotel-alex-naters-1.jpg',
       idealFor: ['Baptêmes', 'Communions', 'Fiançailles', 'Réunions familiales']
     }
   ]
@@ -236,7 +236,7 @@ export default function LocationsPage() {
 
             <div className="relative h-48 lg:h-64 rounded-2xl overflow-hidden">
               <Image
-                src="https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=2069&auto=format&fit=crop"
+                src="https://www.tourismecote-nord.com/fichiersUploadOpt/1200-628-0-0-1920-1228-0-0-dba41563aa09ec78457dd7fd0caaa6fc71b51ae9d50668b01/20220301100739-salle-de-congres.jpg"
                 alt="Espaces de location"
                 fill
                 className="object-cover"
