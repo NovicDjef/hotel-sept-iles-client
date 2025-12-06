@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 
   // Configuration pour serveur Node.js (VPS)
-  output: 'standalone',
+  // output: 'standalone',
 
   // Prefetch settings for better navigation performance
   experimental: {
